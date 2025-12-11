@@ -1,0 +1,38 @@
+# Digital Humain Configuration
+
+# LLM Provider Configuration
+llm:
+  provider: ollama  # Options: ollama, vllm
+  model: llama2     # Model name
+  base_url: http://localhost:11434
+  temperature: 0.7
+  timeout: 300
+
+# Vision Language Model Configuration
+vlm:
+  save_screenshots: true
+  screenshot_dir: ./screenshots
+
+# Agent Configuration
+agents:
+  max_iterations: 10
+  verbose: true
+  pause: 0.5  # Pause between GUI actions (seconds)
+  safe_mode: true  # Enable fail-safe mode
+
+# Logging Configuration
+logging:
+  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
+  log_file: logs/digital_humain.log
+  rotation: 10 MB
+  retention: 1 week
+
+# Orchestration Configuration
+orchestration:
+  shared_memory: true
+  persist_memory: false
+
+# Tool Configuration
+tools:
+  file_operations: true
+  gui_automation: true

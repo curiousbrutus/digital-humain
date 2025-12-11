@@ -1,0 +1,41 @@
+# Core Agent Framework
+langgraph>=0.2.0
+langchain>=0.1.0
+langchain-community>=0.3.27
+
+# LLM Integration
+ollama>=0.1.0
+httpx>=0.25.0
+
+# Vision and GUI Interaction
+pillow>=10.3.0
+opencv-python>=4.8.1.78
+pytesseract>=0.3.10
+pyautogui>=0.9.54
+pyscreeze>=0.1.29
+
+# Multi-Agent Orchestration
+redis>=5.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+loguru>=0.7.0
+typer>=0.9.0
+rich>=13.0.0
+
+# Desktop Automation
+pywinauto>=0.6.8; platform_system=="Windows"
+python-xlib>=0.33; platform_system=="Linux"
+pyobjc-framework-Quartz>=9.0; platform_system=="Darwin"
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
