@@ -162,21 +162,26 @@ Reasoning:"""
         
         # Type action
         if any(word in reasoning_lower for word in ["type", "enter", "input"]):
-            # Extract text to type (simplified)
-            result = self.actions.type_text("sample text")
+            # Try to extract text from context or use placeholder
+            text_to_type = state['context'].get('input_text', 'placeholder text')
+            result = self.actions.type_text(text_to_type)
             return {
                 "action": "type_text",
                 "success": result.get("success", False),
-                "result": result
+                "result": result,
+                "text": text_to_type
             }
         
         # File operations
         if "read file" in reasoning_lower or "open file" in reasoning_lower:
-            result = self.tools.execute("file_read", path="./data/sample.txt")
+            # Try to extract file path from context
+            file_path = state['context'].get('file_path', './data/sample.txt')
+            result = self.tools.execute("file_read", path=file_path)
             return {
                 "action": "file_read",
                 "success": result.get("success", False),
-                "result": result
+                "result": result,
+                "path": file_path
             }
         
         # Wait action

@@ -84,6 +84,3 @@ class TestFileTools:
             assert result["success"] is True
             assert len(result["result"]) == 2
 
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

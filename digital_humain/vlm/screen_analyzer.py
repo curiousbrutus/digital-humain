@@ -149,9 +149,6 @@ class ScreenAnalyzer:
         Returns:
             Analysis results
         """
-        # Convert image to base64
-        img_base64 = self.image_to_base64(image)
-        
         # Create prompt for VLM
         prompt = f"""Analyze this screenshot for the following task: {task}
 
@@ -161,14 +158,18 @@ Please identify:
 3. Suggested actions to complete the task
 4. Any potential issues or warnings
 
-Provide your analysis in a structured format."""
+Provide your analysis in a structured format.
+
+Note: This is a text-only analysis. For full VLM capabilities with image input,
+use a multimodal model like LLaVA through Ollama with proper image encoding."""
         
         try:
-            # Note: This is a simplified version. In practice, you'd need a VLM
-            # that can process images, like LLaVA through Ollama
+            # Note: This is a simplified version using text-only LLM.
+            # For proper multimodal analysis, use a VLM that supports image inputs
+            # like LLaVA through Ollama's vision API, or implement custom image encoding.
             response = self.vlm_provider.generate_sync(
                 prompt=prompt,
-                system_prompt="You are a GUI automation assistant that analyzes screenshots."
+                system_prompt="You are a GUI automation assistant that analyzes screenshots based on descriptions."
             )
             
             return {

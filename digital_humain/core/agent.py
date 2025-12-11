@@ -212,7 +212,7 @@ class BaseAgent(ABC):
             return self.config.system_prompt
         
         return f"""You are a {self.config.role.value} agent specialized in desktop automation.
-Your role is to help with enterprise tasks including HBYS, Accounting, and Quality processes.
+Your role is to help with enterprise tasks including HR/Business Systems (HBYS), Accounting, and Quality processes.
 
 You can:
 1. Analyze screenshots and understand GUI elements
