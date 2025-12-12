@@ -55,6 +55,10 @@ config/local.yaml
 
 # Screenshots and temporary files
 screenshots/
+demonstrations/
+demo_recordings/
+episodic_memory/
+episodic_data/
 tmp/
 temp/
 
