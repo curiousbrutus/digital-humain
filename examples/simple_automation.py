@@ -34,7 +34,7 @@ def main():
     llm = OllamaProvider(
         model=llm_config.get("model", "llama2"),
         base_url=llm_config.get("base_url", "http://localhost:11434"),
-        timeout=llm_config.get("timeout", 300)
+        timeout=llm_config.get("timeout", 60)
     )
     print(f"✓ LLM provider initialized: {llm_config.get('model', 'llama2')}")
     

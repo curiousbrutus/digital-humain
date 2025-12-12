@@ -139,6 +139,7 @@ Reasoning:"""
             Action result
         """
         reasoning_lower = reasoning.lower()
+        import re
         
         # Analyze screen if needed
         if any(word in reasoning_lower for word in ["analyze", "look", "check", "see"]):
@@ -161,9 +162,15 @@ Reasoning:"""
             }
         
         # Type action
-        if any(word in reasoning_lower for word in ["type", "enter", "input"]):
-            # Try to extract text from context or use placeholder
-            text_to_type = state['context'].get('input_text', 'placeholder text')
+        if any(word in reasoning_lower for word in ["type", "enter", "input", "write"]):
+            # Try to extract text to type (content in quotes)
+            text_match = re.search(r'["\'](.*?)["\']', reasoning)
+            if text_match:
+                text_to_type = text_match.group(1)
+            else:
+                # Fallback to context or placeholder
+                text_to_type = state['context'].get('input_text', 'placeholder text')
+            
             result = self.actions.type_text(text_to_type)
             return {
                 "action": "type_text",
@@ -171,7 +178,25 @@ Reasoning:"""
                 "result": result,
                 "text": text_to_type
             }
-        
+            
+        # Press key action
+        if any(word in reasoning_lower for word in ["press", "hit"]):
+             # Extract key name
+             key_match = re.search(r'(?:press|hit)\s+(?:the\s+)?(\w+)', reasoning_lower)
+             if key_match:
+                 key = key_match.group(1)
+                 # Map common key names if needed
+                 if key in ["enter", "return"]: key = "enter"
+                 if key in ["windows", "super", "cmd"]: key = "win"
+                 
+                 result = self.actions.press_key(key)
+                 return {
+                     "action": "press_key",
+                     "success": result.get("success", False),
+                     "result": result,
+                     "key": key
+                 }
+
         # File operations
         if "read file" in reasoning_lower or "open file" in reasoning_lower:
             # Try to extract file path from context
