@@ -11,6 +11,9 @@ A self-hosted Python-based agentic AI framework for enterprise desktop automatio
 - 🧠 **Multi-Step Reasoning**: ReAct-pattern agents with observation, reasoning, and action capabilities
 - 📊 **Unstructured Data Handling**: Process various data formats for HBYS, Accounting, and Quality tasks
 - 🔄 **Shared Memory**: Context sharing between agents for collaborative task execution
+- 🎬 **Learn from User**: Record and replay user demonstrations for macro automation
+- 🧩 **Episodic Memory**: Store and retrieve past experiences for enhanced decision making
+- 📝 **Memory Summarization**: Rolling summaries prevent prompt bloat in long-running tasks
 
 ## Architecture
 
@@ -23,6 +26,9 @@ digital_humain/
 ├── vlm/               # Vision Language Model module
 │   ├── screen_analyzer.py  # Screen capture and analysis
 │   └── actions.py          # GUI action execution
+├── memory/            # Learning and recall systems
+│   ├── demonstration.py # Record/replay user actions
+│   └── episodic.py    # Episodic memory and summarization
 ├── orchestration/     # Multi-agent coordination
 │   ├── coordinator.py # Task decomposition and delegation
 │   ├── registry.py    # Agent registry
@@ -147,7 +153,27 @@ python examples/simple_automation.py
 
 # Multi-agent orchestration example
 python examples/multi_agent_orchestration.py
+
+# Memory and learning features demo
+python examples/memory_demo.py
 ```
+
+## GUI Application
+
+Launch the enhanced GUI with memory and recording features:
+
+```bash
+python gui_app.py
+```
+
+The GUI includes:
+- **LLM Configuration**: Select provider (Ollama/OpenRouter/Letta) and model
+- **Task Execution**: Natural language task input with voice support
+- **Recording Controls**: Record, save, and replay user demonstrations
+- **Memory Settings**: Configure episodic memory and replay speed
+- **Execution Logs**: Real-time logging of agent actions and decisions
+
+See [MEMORY_FEATURES.md](MEMORY_FEATURES.md) for detailed documentation on the memory system.
 
 ## Configuration
 

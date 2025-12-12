@@ -7,8 +7,21 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
 from loguru import logger
-import pyautogui
-from pynput import mouse, keyboard
+
+# Optional GUI dependencies - allow import without display
+try:
+    import pyautogui
+    PYAUTOGUI_AVAILABLE = True
+except (ImportError, KeyError):
+    PYAUTOGUI_AVAILABLE = False
+    logger.warning("pyautogui not available or no display - recording/replay disabled")
+
+try:
+    from pynput import mouse, keyboard
+    PYNPUT_AVAILABLE = True
+except (ImportError, KeyError):
+    PYNPUT_AVAILABLE = False
+    logger.warning("pynput not available - recording disabled")
 
 
 class RecordedAction(BaseModel):
@@ -35,6 +48,10 @@ class ActionRecorder:
     
     def start_recording(self) -> None:
         """Start recording user actions."""
+        if not PYNPUT_AVAILABLE:
+            logger.error("Cannot start recording - pynput not available")
+            return
+        
         if self.is_recording:
             logger.warning("Already recording")
             return
@@ -100,7 +117,7 @@ class ActionRecorder:
                 'pressed': pressed
             },
             window_title=self.current_window,
-            screen_size=pyautogui.size()
+            screen_size=pyautogui.size() if PYAUTOGUI_AVAILABLE else None
         )
         self.actions.append(action)
     
@@ -116,7 +133,7 @@ class ActionRecorder:
                 action_type='mouse_move',
                 params={'x': x, 'y': y},
                 window_title=self.current_window,
-                screen_size=pyautogui.size()
+                screen_size=pyautogui.size() if PYAUTOGUI_AVAILABLE else None
             )
             self.actions.append(action)
     
@@ -135,7 +152,7 @@ class ActionRecorder:
             action_type='key_press',
             params={'key': key_str},
             window_title=self.current_window,
-            screen_size=pyautogui.size()
+            screen_size=pyautogui.size() if PYAUTOGUI_AVAILABLE else None
         )
         self.actions.append(action)
     
@@ -154,7 +171,7 @@ class ActionRecorder:
             action_type='key_release',
             params={'key': key_str},
             window_title=self.current_window,
-            screen_size=pyautogui.size()
+            screen_size=pyautogui.size() if PYAUTOGUI_AVAILABLE else None
         )
         self.actions.append(action)
 
@@ -329,6 +346,13 @@ class DemonstrationMemory:
         Returns:
             Execution result dictionary
         """
+        if not PYAUTOGUI_AVAILABLE:
+            return {
+                "action": action.action_type,
+                "success": False,
+                "error": "pyautogui not available"
+            }
+        
         try:
             if action.action_type == 'mouse_click':
                 params = action.params

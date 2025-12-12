@@ -1,0 +1,12 @@
+{
+  "id": "831b1843522f",
+  "timestamp": 1765549021.973319,
+  "observation": "Reports page showing data table",
+  "reasoning": "Export report for analysis",
+  "action": {
+    "type": "click",
+    "target": "export_button"
+  },
+  "result": "Report downloaded",
+  "metadata": {}
+}
