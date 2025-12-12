@@ -27,6 +27,8 @@ from digital_humain.tools.base import ToolRegistry
 from digital_humain.tools.file_tools import FileReadTool, FileWriteTool, FileListTool
 from digital_humain.agents.automation_agent import DesktopAutomationAgent
 from digital_humain.utils.config import load_config
+from digital_humain.memory.demonstration import DemonstrationMemory
+from digital_humain.memory.episodic import EpisodicMemory, MemorySummarizer
 
 class TextHandler:
     def __init__(self, text_widget):
@@ -42,9 +44,14 @@ class DigitalHumainGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Digital Humain - Desktop Automation")
-        self.root.geometry("980x720")
+        self.root.geometry("1200x850")
         self._init_style()
         self.current_models = []
+        
+        # Initialize memory systems
+        self.demo_memory = DemonstrationMemory()
+        self.episodic_memory = EpisodicMemory()
+        self.memory_summarizer = MemorySummarizer()
         
         self.setup_ui()
         self.load_models()
@@ -137,6 +144,56 @@ class DigitalHumainGUI:
 
         ttk.Button(control_frame, text="Voice Input", command=self.voice_to_text).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear Logs", command=self.clear_logs).pack(side=tk.LEFT, padx=5)
+        
+        # Recording & Memory Controls
+        memory_frame = ttk.LabelFrame(main_frame, text="Recording & Memory", padding="8")
+        memory_frame.pack(fill=tk.X, pady=8)
+        
+        # Recording controls
+        record_frame = ttk.Frame(memory_frame)
+        record_frame.pack(side=tk.LEFT, padx=10)
+        
+        self.is_recording = False
+        self.record_btn = ttk.Button(record_frame, text="Start Recording", command=self.toggle_recording)
+        self.record_btn.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(record_frame, text="Demo Name:").pack(side=tk.LEFT, padx=5)
+        self.demo_name_var = tk.StringVar(value="demo_1")
+        ttk.Entry(record_frame, textvariable=self.demo_name_var, width=15).pack(side=tk.LEFT, padx=5)
+        
+        # Replay controls
+        replay_frame = ttk.Frame(memory_frame)
+        replay_frame.pack(side=tk.LEFT, padx=10)
+        
+        ttk.Label(replay_frame, text="Replay:").pack(side=tk.LEFT, padx=5)
+        self.selected_demo_var = tk.StringVar()
+        self.demo_combo = ttk.Combobox(replay_frame, textvariable=self.selected_demo_var, width=15, state="readonly")
+        self.demo_combo.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(replay_frame, text="Refresh", command=self.refresh_demos).pack(side=tk.LEFT, padx=2)
+        ttk.Button(replay_frame, text="Replay", command=self.replay_demo).pack(side=tk.LEFT, padx=2)
+        ttk.Button(replay_frame, text="Dry Run", command=self.dry_run_demo).pack(side=tk.LEFT, padx=2)
+        ttk.Button(replay_frame, text="Delete", command=self.delete_demo).pack(side=tk.LEFT, padx=2)
+        
+        # Memory settings
+        mem_settings_frame = ttk.Frame(memory_frame)
+        mem_settings_frame.pack(side=tk.LEFT, padx=10)
+        
+        self.episodic_enabled = tk.BooleanVar(value=True)
+        ttk.Checkbutton(mem_settings_frame, text="Episodic Memory", variable=self.episodic_enabled, 
+                       command=self.toggle_episodic).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(mem_settings_frame, text="Speed:").pack(side=tk.LEFT, padx=5)
+        self.speed_var = tk.DoubleVar(value=1.0)
+        speed_scale = ttk.Scale(mem_settings_frame, from_=0.5, to=2.0, variable=self.speed_var, 
+                               orient=tk.HORIZONTAL, length=100)
+        speed_scale.pack(side=tk.LEFT, padx=5)
+        
+        self.safety_pause_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(mem_settings_frame, text="Safety Pause", variable=self.safety_pause_var).pack(side=tk.LEFT, padx=5)
+        
+        # Initialize demo list
+        self.refresh_demos()
         
         # Logs
         log_frame = ttk.LabelFrame(main_frame, text="Execution Logs", padding="5")
@@ -297,12 +354,36 @@ class DigitalHumainGUI:
             engine = AgentEngine(agent)
             engine.build_graph()
             
+            # Retrieve relevant past episodes if enabled
+            if self.episodic_memory.enable_recall:
+                relevant_episodes = self.episodic_memory.retrieve_relevant(task, top_k=3)
+                if relevant_episodes:
+                    logger.info(f"Retrieved {len(relevant_episodes)} relevant past episodes")
+                    for ep in relevant_episodes:
+                        logger.debug(f"  - Episode {ep.id}: {ep.observation[:50]}...")
+            
             result = engine.run(task, recursion_limit=15)
+            
+            # Store episode in episodic memory if enabled
+            if self.episodic_memory.enable_recall and result.get('history'):
+                for step in result['history']:
+                    self.episodic_memory.add_episode(
+                        observation=step.get('observation', ''),
+                        reasoning=step.get('reasoning', ''),
+                        action=step.get('action', {}),
+                        result=str(step.get('action', {}).get('success', False)),
+                        metadata={'task': task, 'model': model, 'provider': provider}
+                    )
             
             if result['error']:
                 logger.error(f"Task failed: {result['error']}")
             else:
                 logger.success("Task completed successfully!")
+                
+                # Log episodic memory stats
+                if self.episodic_memory.enable_recall:
+                    stats = self.episodic_memory.get_stats()
+                    logger.info(f"Episodic memory: {stats['total_episodes']} episodes stored")
                 
         except Exception as e:
             logger.error(f"Execution error: {e}")
@@ -368,6 +449,98 @@ class DigitalHumainGUI:
                 logger.info(f"Voice captured: {text}")
         except Exception as e:
             logger.error(f"Voice capture failed: {e}")
+    
+    def toggle_recording(self):
+        """Toggle recording on/off."""
+        if not self.is_recording:
+            # Start recording
+            self.demo_memory.start_recording()
+            self.is_recording = True
+            self.record_btn.configure(text="Stop Recording")
+            logger.info("Recording started - perform actions now")
+        else:
+            # Stop recording
+            actions = self.demo_memory.stop_recording()
+            self.is_recording = False
+            self.record_btn.configure(text="Start Recording")
+            
+            # Save the recording
+            demo_name = self.demo_name_var.get().strip()
+            if demo_name and actions:
+                self.demo_memory.save_demonstration(demo_name, actions)
+                logger.success(f"Recording saved as '{demo_name}' with {len(actions)} actions")
+                self.refresh_demos()
+            else:
+                logger.warning("No demo name provided or no actions recorded")
+    
+    def refresh_demos(self):
+        """Refresh the list of available demonstrations."""
+        demos = self.demo_memory.list_demonstrations()
+        demo_names = [demo['name'] for demo in demos]
+        self.demo_combo['values'] = demo_names
+        if demo_names:
+            self.demo_combo.set(demo_names[0])
+        logger.debug(f"Refreshed demo list: {len(demo_names)} demonstrations")
+    
+    def replay_demo(self):
+        """Replay the selected demonstration."""
+        demo_name = self.selected_demo_var.get()
+        if not demo_name:
+            logger.warning("No demonstration selected")
+            return
+        
+        speed = self.speed_var.get()
+        safety_pause = self.safety_pause_var.get()
+        
+        def replay_thread():
+            try:
+                results = self.demo_memory.replay_demonstration(
+                    demo_name,
+                    speed=speed,
+                    dry_run=False,
+                    safety_pause=safety_pause
+                )
+                logger.success(f"Replay completed: {len(results)} actions executed")
+            except Exception as e:
+                logger.error(f"Replay failed: {e}")
+        
+        threading.Thread(target=replay_thread, daemon=True).start()
+    
+    def dry_run_demo(self):
+        """Perform a dry run of the selected demonstration."""
+        demo_name = self.selected_demo_var.get()
+        if not demo_name:
+            logger.warning("No demonstration selected")
+            return
+        
+        results = self.demo_memory.replay_demonstration(
+            demo_name,
+            dry_run=True,
+            safety_pause=False
+        )
+        
+        logger.info(f"DRY RUN for '{demo_name}':")
+        for i, result in enumerate(results):
+            logger.info(f"  {i+1}. {result['action']}: {result['params']}")
+    
+    def delete_demo(self):
+        """Delete the selected demonstration."""
+        demo_name = self.selected_demo_var.get()
+        if not demo_name:
+            logger.warning("No demonstration selected")
+            return
+        
+        if self.demo_memory.delete_demonstration(demo_name):
+            logger.success(f"Demonstration '{demo_name}' deleted")
+            self.refresh_demos()
+        else:
+            logger.error(f"Failed to delete demonstration '{demo_name}'")
+    
+    def toggle_episodic(self):
+        """Toggle episodic memory on/off."""
+        enabled = self.episodic_enabled.get()
+        self.episodic_memory.enable_recall = enabled
+        logger.info(f"Episodic memory {'enabled' if enabled else 'disabled'}")
 
 if __name__ == "__main__":
     root = tk.Tk()
