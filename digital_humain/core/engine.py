@@ -90,8 +90,25 @@ class AgentEngine:
             action_result = self.agent.act(state, reasoning)
             state['actions'].append(action_result)
             
-            if self.agent.config.verbose:
-                logger.info(f"[Act] {action_result.get('action', 'unknown')}")
+            # Log action result with key details
+            action_name = action_result.get('action', 'unknown')
+            success = action_result.get('success', False)
+            
+            # Build compact param summary
+            params_summary = []
+            if 'text' in action_result:
+                text = action_result.get('text', '')
+                if text and isinstance(text, str):
+                    params_summary.append(f"text='{text[:30]}...'")
+            if 'key' in action_result:
+                params_summary.append(f"key={action_result['key']}")
+            if 'app_name' in action_result:
+                params_summary.append(f"app={action_result['app_name']}")
+            if 'position' in action_result and action_result['position']:
+                params_summary.append(f"pos={action_result['position']}")
+            
+            params_str = ", ".join(params_summary) if params_summary else ""
+            logger.info(f"[Act] {action_name} | Success: {success} | {params_str}")
             
             # Update history
             state['history'].append({
@@ -123,6 +140,7 @@ class AgentEngine:
         Args:
             task: Task description
             context: Optional context dictionary
+            recursion_limit: Maximum number of graph iterations
             
         Returns:
             Final agent state
@@ -135,15 +153,25 @@ class AgentEngine:
             self.build_graph()
         
         logger.info(f"Starting graph execution for task: {task}")
+        logger.info(f"Recursion limit set to: {recursion_limit}")
         
         try:
             # Execute the graph
             final_state = self.graph.invoke(state, config={"recursion_limit": recursion_limit})
-            logger.info(f"Graph execution completed. Steps: {final_state['current_step']}")
+            logger.info(f"Graph execution completed. Steps taken: {final_state['current_step']} (limit: {recursion_limit})")
+            
+            # Warn if limit was reached
+            if final_state['current_step'] >= recursion_limit - 1:
+                logger.warning(f"Recursion limit ({recursion_limit}) reached. Task may be incomplete.")
+            
             return final_state
         
         except Exception as e:
-            logger.exception(f"Error during graph execution: {e}")
+            error_msg = str(e)
+            if "recursion limit" in error_msg.lower():
+                logger.error(f"Recursion limit ({recursion_limit}) exceeded during graph execution. Consider increasing limit in GUI.")
+            else:
+                logger.exception(f"Error during graph execution: {e}")
             state['error'] = str(e)
             return state
     

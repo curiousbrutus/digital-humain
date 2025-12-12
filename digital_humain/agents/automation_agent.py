@@ -9,6 +9,7 @@ from digital_humain.core.llm import LLMProvider
 from digital_humain.vlm.screen_analyzer import ScreenAnalyzer
 from digital_humain.vlm.actions import GUIActions
 from digital_humain.tools.base import ToolRegistry
+from digital_humain.agents.action_parser import ActionParser, AppLauncher
 
 
 class DesktopAutomationAgent(BaseAgent):
@@ -139,101 +140,103 @@ Reasoning:"""
         Returns:
             Action result
         """
-        reasoning_lower = reasoning.lower()
-        import re
+        # Parse intent using new ActionParser
+        intent = ActionParser.parse(reasoning, state.get('context'), state.get('task'))
         
-        # Analyze screen if needed
-        if any(word in reasoning_lower for word in ["analyze", "look", "check", "see"]):
-            analysis = self.screen.analyze_screen(state['task'])
+        logger.info(f"[Action Parser] {intent}")
+        
+        # Handle no_action case
+        if intent.action_type == "no_action":
             return {
-                "action": "analyze_screen",
-                "success": analysis.get("success", False),
-                "result": analysis
+                "action": "no_action",
+                "success": True,
+                "reason": intent.reason,
+                "result": "No actionable command detected"
             }
         
-        # Click action
-        if "click" in reasoning_lower:
-            # Try to find element mentioned in reasoning
-            # This is simplified - real implementation would extract coordinates
-            result = self.actions.click()
+        # Handle task completion
+        if intent.action_type == "task_complete":
             return {
-                "action": "click",
+                "action": "task_complete",
+                "success": True,
+                "result": "Task marked as complete by agent"
+            }
+        
+        # Launch app
+        if intent.action_type == "launch_app":
+            app_name = intent.params.get("app_name", "")
+            result = AppLauncher.launch_app(app_name)
+            if result.get("success"):
+                self.actions.wait(0.5)  # Brief wait for app to start
+            return result
+        
+        # Press key
+        if intent.action_type == "press_key":
+            key = intent.params.get("key", "")
+            result = self.actions.press_key(key)
+            logger.info(f"[Press Key] {key} -> Success: {result.get('success', False)}")
+            return {
+                "action": "press_key",
                 "success": result.get("success", False),
-                "result": result
+                "result": result,
+                "key": key
             }
         
-        # Type action
-        if any(word in reasoning_lower for word in ["type", "enter", "input", "write"]):
-            # Try to extract text to type (content in quotes)
-            text_match = re.search(r'["\'](.*?)["\']', reasoning)
-            if text_match:
-                text_to_type = text_match.group(1)
-            else:
-                # Fallback to context or task-derived text before using placeholder
-                text_to_type = state['context'].get('input_text') or state['task'] or 'placeholder text'
-            
+        # Type text
+        if intent.action_type == "type_text":
+            text_to_type = intent.params.get("text", "")
             result = self.actions.type_text(text_to_type)
+            logger.info(f"[Type Text] '{text_to_type[:50]}...' -> Success: {result.get('success', False)}")
             return {
                 "action": "type_text",
                 "success": result.get("success", False),
                 "result": result,
                 "text": text_to_type
             }
-
-        # Open Notepad when asked (common desktop task)
-        if "notepad" in reasoning_lower:
-            try:
-                subprocess.Popen(["notepad.exe"])
-                self.actions.wait(0.5)
-                return {
-                    "action": "open_notepad",
-                    "success": True,
-                    "result": "Launched notepad.exe"
-                }
-            except Exception as e:
-                return {
-                    "action": "open_notepad",
-                    "success": False,
-                    "error": str(e)
-                }
-            
-        # Press key action
-        if any(word in reasoning_lower for word in ["press", "hit"]):
-             # Extract key name
-             key_match = re.search(r'(?:press|hit)\s+(?:the\s+)?(\w+)', reasoning_lower)
-             if key_match:
-                 key = key_match.group(1)
-                 # Map common key names if needed
-                 if key in ["enter", "return"]: key = "enter"
-                 if key in ["windows", "super", "cmd"]: key = "win"
-                 
-                 result = self.actions.press_key(key)
-                 return {
-                     "action": "press_key",
-                     "success": result.get("success", False),
-                     "result": result,
-                     "key": key
-                 }
-
+        
+        # Click
+        if intent.action_type == "click":
+            x = intent.params.get("x")
+            y = intent.params.get("y")
+            result = self.actions.click(x, y)
+            logger.info(f"[Click] ({x}, {y}) -> Success: {result.get('success', False)}")
+            return {
+                "action": "click",
+                "success": result.get("success", False),
+                "result": result,
+                "position": (x, y) if x and y else None
+            }
+        
+        # Analyze screen
+        if intent.action_type == "analyze_screen":
+            analysis = self.screen.analyze_screen(state['task'])
+            logger.info(f"[Analyze Screen] Success: {analysis.get('success', False)}")
+            return {
+                "action": "analyze_screen",
+                "success": analysis.get("success", False),
+                "result": analysis
+            }
+        
+        # Wait
+        if intent.action_type == "wait":
+            duration = intent.params.get("duration", 1.0)
+            result = self.actions.wait(duration)
+            return {
+                "action": "wait",
+                "success": result.get("success", False),
+                "result": result,
+                "duration": duration
+            }
+        
         # File operations
-        if "read file" in reasoning_lower or "open file" in reasoning_lower:
-            # Try to extract file path from context
-            file_path = state['context'].get('file_path', './data/sample.txt')
+        if intent.action_type == "file_read":
+            file_path = state.get('context', {}).get('file_path', './data/sample.txt')
             result = self.tools.execute("file_read", path=file_path)
             return {
                 "action": "file_read",
                 "success": result.get("success", False),
                 "result": result,
                 "path": file_path
-            }
-        
-        # Wait action
-        if "wait" in reasoning_lower:
-            result = self.actions.wait(1.0)
-            return {
-                "action": "wait",
-                "success": result.get("success", False),
-                "result": result
             }
         
         # Default: continue observation

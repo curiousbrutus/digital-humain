@@ -138,6 +138,9 @@ class OllamaProvider(LLMProvider):
                 return result.get("response", "")
         
         except httpx.HTTPError as e:
+            if hasattr(e, 'response') and e.response is not None and e.response.status_code == 500:
+                logger.error(f"Ollama server error (500). Please check if Ollama service is running: ollama serve")
+                raise RuntimeError(f"Ollama server error. Check service status with 'ollama serve' or 'ollama list'. Error: {e}")
             logger.error(f"Ollama API error: {e}")
             raise RuntimeError(f"Failed to generate completion: {e}")
     
@@ -451,6 +454,7 @@ class LettaProvider(LLMProvider):
         max_tokens: Optional[int] = None,
         stop: Optional[List[str]] = None,
     ) -> str:
+        """Generate text completion synchronously."""
         url = self._url(f"/agents/{self.agent_id}/messages")
         payload = self._payload(prompt, system_prompt, temperature, max_tokens, stop)
         try:
@@ -461,45 +465,4 @@ class LettaProvider(LLMProvider):
                 return data.get("response", "") or data.get("message", "")
         except httpx.HTTPError as e:
             logger.error(f"Letta API error: {e}")
-            raise RuntimeError(f"Failed to generate completion: {e}")
-    
-    def generate_sync(
-        self,
-        prompt: str,
-        system_prompt: Optional[str] = None,
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        stop: Optional[List[str]] = None,
-    ) -> str:
-        """Generate text completion synchronously."""
-        url = f"{self.base_url}/v1/completions"
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-        
-        payload = {
-            "model": self.model,
-            "prompt": full_prompt,
-            "temperature": temperature,
-            "max_tokens": max_tokens or 512,
-        }
-        
-        if stop:
-            payload["stop"] = stop
-        
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.post(url, json=payload, headers=headers)
-                response.raise_for_status()
-                result = response.json()
-                return result["choices"][0]["text"]
-        
-        except httpx.HTTPError as e:
-            logger.error(f"vLLM API error: {e}")
             raise RuntimeError(f"Failed to generate completion: {e}")
