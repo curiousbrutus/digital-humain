@@ -91,8 +91,14 @@ class AppLauncher:
         
         command = allowed[app_name_lower]
         try:
-            # Launch with shell=True for Mac's "open -a" commands
-            subprocess.Popen(command, shell=True if platform.system() == "Darwin" else False)
+            # Split Mac commands into proper list format for security
+            if platform.system() == "Darwin" and isinstance(command, str):
+                cmd_parts = command.split()
+                subprocess.Popen(cmd_parts)
+            elif isinstance(command, str):
+                subprocess.Popen([command])
+            else:
+                subprocess.Popen(command)
             logger.info(f"Launched app: {app_name} ({command})")
             return {
                 "action": "launch_app",

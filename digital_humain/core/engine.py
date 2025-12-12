@@ -97,8 +97,9 @@ class AgentEngine:
             # Build compact param summary
             params_summary = []
             if 'text' in action_result:
-                text = action_result['text']
-                params_summary.append(f"text='{text[:30]}...'")
+                text = action_result.get('text', '')
+                if text and isinstance(text, str):
+                    params_summary.append(f"text='{text[:30]}...'")
             if 'key' in action_result:
                 params_summary.append(f"key={action_result['key']}")
             if 'app_name' in action_result:

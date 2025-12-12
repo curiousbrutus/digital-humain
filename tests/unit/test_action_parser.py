@@ -2,11 +2,6 @@
 
 import pytest
 import platform
-import sys
-import os
-
-# Add the project root to the path for direct import
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Import directly to avoid GUI dependencies
 from digital_humain.agents.action_parser import (

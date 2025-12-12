@@ -11,6 +11,13 @@ from loguru import logger
 from digital_humain.core.llm import LLMProvider
 
 
+# OCR installation instructions constant
+OCR_INSTALL_INSTRUCTIONS = (
+    "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki | "
+    "Linux: sudo apt install tesseract-ocr"
+)
+
+
 class ScreenAnalyzer:
     """
     Analyzes screen content using Vision Language Models.
@@ -248,18 +255,18 @@ use a multimodal model like LLaVA through Ollama with proper image encoding."""
                 "error": "Tesseract OCR not available. Install pytesseract package and Tesseract-OCR binary.",
                 "task": task,
                 "image_size": image.size,
-                "instructions": "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki | Linux: sudo apt install tesseract-ocr"
+                "instructions": OCR_INSTALL_INSTRUCTIONS
             }
         except Exception as e:
             error_msg = str(e)
             if "tesseract is not installed" in error_msg.lower() or "failed to execute tesseract" in error_msg.lower():
-                logger.error(f"Tesseract binary not found. Install instructions: Windows: https://github.com/UB-Mannheim/tesseract/wiki | Linux: sudo apt install tesseract-ocr")
+                logger.error(f"Tesseract binary not found. Install instructions: {OCR_INSTALL_INSTRUCTIONS}")
                 return {
                     "success": False,
                     "error": "Tesseract OCR binary not found in system PATH",
                     "task": task,
                     "image_size": image.size,
-                    "instructions": "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki | Linux: sudo apt install tesseract-ocr"
+                    "instructions": OCR_INSTALL_INSTRUCTIONS
                 }
             logger.error(f"OCR analysis failed: {e}")
             return {
