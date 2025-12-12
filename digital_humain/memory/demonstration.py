@@ -65,7 +65,8 @@ class ActionRecorder:
             import pygetwindow as gw
             active_window = gw.getActiveWindow()
             self.current_window = active_window.title if active_window else "Unknown"
-        except:
+        except (ImportError, AttributeError, Exception) as e:
+            logger.debug(f"Could not get active window: {e}")
             self.current_window = "Unknown"
         
         # Start listeners
@@ -376,11 +377,34 @@ class DemonstrationMemory:
                 }
             
             elif action.action_type == 'key_press':
-                # Simplified key execution
+                # Map pynput keys to pyautogui keys
+                key_mapping = {
+                    'Key.enter': 'enter',
+                    'Key.tab': 'tab',
+                    'Key.space': 'space',
+                    'Key.backspace': 'backspace',
+                    'Key.delete': 'delete',
+                    'Key.esc': 'esc',
+                    'Key.shift': 'shift',
+                    'Key.ctrl': 'ctrl',
+                    'Key.alt': 'alt',
+                    'Key.up': 'up',
+                    'Key.down': 'down',
+                    'Key.left': 'left',
+                    'Key.right': 'right',
+                    'Key.home': 'home',
+                    'Key.end': 'end',
+                    'Key.page_up': 'pageup',
+                    'Key.page_down': 'pagedown',
+                }
+                
                 key = action.params['key']
-                # Handle special keys
-                if 'Key.' in key:
-                    key = key.replace('Key.', '')
+                # Use mapping if available, otherwise try to strip Key. prefix
+                if key in key_mapping:
+                    key = key_mapping[key]
+                elif 'Key.' in key:
+                    key = key.replace('Key.', '').lower()
+                
                 pyautogui.press(key)
                 
                 return {

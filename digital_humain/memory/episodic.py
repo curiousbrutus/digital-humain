@@ -157,7 +157,7 @@ class EpisodicMemory:
         action: Dict[str, Any],
         result: Optional[str] = None,
         metadata: Optional[Dict] = None
-    ) -> Episode:
+    ) -> Optional[Episode]:
         """
         Add a new episode to memory.
         
