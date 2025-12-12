@@ -241,7 +241,26 @@ use a multimodal model like LLaVA through Ollama with proper image encoding."""
                 "suggestions": ["Use element coordinates for automation"]
             }
         
+        except ImportError:
+            logger.warning("pytesseract not installed. OCR analysis unavailable. Install with: pip install pytesseract")
+            return {
+                "success": False,
+                "error": "Tesseract OCR not available. Install pytesseract package and Tesseract-OCR binary.",
+                "task": task,
+                "image_size": image.size,
+                "instructions": "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki | Linux: sudo apt install tesseract-ocr"
+            }
         except Exception as e:
+            error_msg = str(e)
+            if "tesseract is not installed" in error_msg.lower() or "failed to execute tesseract" in error_msg.lower():
+                logger.error(f"Tesseract binary not found. Install instructions: Windows: https://github.com/UB-Mannheim/tesseract/wiki | Linux: sudo apt install tesseract-ocr")
+                return {
+                    "success": False,
+                    "error": "Tesseract OCR binary not found in system PATH",
+                    "task": task,
+                    "image_size": image.size,
+                    "instructions": "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki | Linux: sudo apt install tesseract-ocr"
+                }
             logger.error(f"OCR analysis failed: {e}")
             return {
                 "success": False,
