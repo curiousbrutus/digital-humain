@@ -76,10 +76,10 @@ class AgentEngine:
         observation = state['observations'][-1] if state['observations'] else ""
         reasoning = self.agent.reason(state, observation)
         state['reasoning'].append(reasoning)
-        
-        if self.agent.config.verbose:
-            logger.info(f"[Reason] {reasoning[:100]}...")
-        
+
+        # Always show the full reasoning so operators can follow the chain of thought
+        logger.info(f"[Reason]\n{reasoning}")
+
         return state
     
     def _act_node(self, state: AgentState) -> AgentState:
@@ -116,7 +116,7 @@ class AgentEngine:
             return "continue"
         return "end"
     
-    def run(self, task: str, context: Optional[Dict[str, Any]] = None) -> AgentState:
+    def run(self, task: str, context: Optional[Dict[str, Any]] = None, recursion_limit: int = 25) -> AgentState:
         """
         Execute the agent using the graph.
         
@@ -138,7 +138,7 @@ class AgentEngine:
         
         try:
             # Execute the graph
-            final_state = self.graph.invoke(state)
+            final_state = self.graph.invoke(state, config={"recursion_limit": recursion_limit})
             logger.info(f"Graph execution completed. Steps: {final_state['current_step']}")
             return final_state
         

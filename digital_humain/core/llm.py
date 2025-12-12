@@ -244,6 +244,224 @@ class VLLMProvider(LLMProvider):
         except httpx.HTTPError as e:
             logger.error(f"vLLM API error: {e}")
             raise RuntimeError(f"Failed to generate completion: {e}")
+
+
+class OpenRouterProvider(LLMProvider):
+    """OpenRouter provider using OpenAI-compatible chat API."""
+
+    def __init__(
+        self,
+        model: str,
+        api_key: str,
+        base_url: str = "https://openrouter.ai/api/v1",
+        timeout: int = 120,
+        referer: Optional[str] = None,
+        site_url: Optional[str] = None,
+    ):
+        self.model = model
+        self.api_key = api_key
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+        self.referer = referer
+        self.site_url = site_url
+        logger.info(f"Initialized OpenRouter provider with model: {model}")
+
+    def _normalized_base(self) -> str:
+        base = self.base_url.rstrip('/')
+        # Avoid double /v1 when user passes .../api/v1
+        if base.endswith("/v1"):
+            base = base[:-3]
+        return base
+
+    def _headers(self) -> Dict[str, str]:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        if self.referer:
+            headers["HTTP-Referer"] = self.referer
+        if self.site_url:
+            headers["X-Title"] = self.site_url
+        return headers
+
+    def _payload(
+        self,
+        prompt: str,
+        system_prompt: Optional[str],
+        temperature: float,
+        max_tokens: Optional[int],
+        stop: Optional[List[str]],
+    ) -> Dict[str, Any]:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        if max_tokens:
+            payload["max_tokens"] = max_tokens
+        if stop:
+            payload["stop"] = stop
+        return payload
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        base = self._normalized_base()
+        url = f"{base}/v1/chat/completions"
+        payload = self._payload(prompt, system_prompt, temperature, max_tokens, stop)
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(url, json=payload, headers=self._headers())
+                response.raise_for_status()
+                result = response.json()
+                return result["choices"][0]["message"]["content"]
+        except httpx.HTTPError as e:
+            logger.error(f"OpenRouter API error: {e}")
+            raise RuntimeError(f"Failed to generate completion: {e}")
+
+    def generate_sync(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        base = self._normalized_base()
+        url = f"{base}/v1/chat/completions"
+        payload = self._payload(prompt, system_prompt, temperature, max_tokens, stop)
+
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                response = client.post(url, json=payload, headers=self._headers())
+                response.raise_for_status()
+                result = response.json()
+                return result["choices"][0]["message"]["content"]
+        except httpx.HTTPError as e:
+            logger.error(f"OpenRouter API error: {e}")
+            raise RuntimeError(f"Failed to generate completion: {e}")
+
+    def list_models(self) -> List[str]:
+        """Return available models if API key allows; otherwise empty list."""
+        base = self._normalized_base()
+        url = f"{base}/v1/models"
+        try:
+            with httpx.Client(timeout=30) as client:
+                response = client.get(url, headers=self._headers())
+                response.raise_for_status()
+                result = response.json()
+                models = result.get("data", [])
+                names = [m.get("id") for m in models if m.get("id")]
+                # Keep free models first if available
+                free_first = [m for m in names if "free" in m.lower()] + [m for m in names if "free" not in m.lower()]
+                return free_first
+        except httpx.HTTPError as e:
+            logger.warning(f"Failed to fetch OpenRouter models: {e}")
+            return []
+
+
+class LettaProvider(LLMProvider):
+    """Letta stateful agent provider (messages API)."""
+
+    def __init__(
+        self,
+        agent_id: str,
+        api_key: str,
+        base_url: str = "https://api.letta.ai",
+        timeout: int = 120,
+        model: Optional[str] = None,
+    ):
+        self.agent_id = agent_id
+        self.api_key = api_key
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+        self.model = model
+        logger.info(f"Initialized Letta provider for agent: {agent_id}")
+
+    def _headers(self) -> Dict[str, str]:
+        return {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+    def _url(self, path: str) -> str:
+        return f"{self.base_url}{path}"
+
+    def _payload(
+        self,
+        prompt: str,
+        system_prompt: Optional[str],
+        temperature: float,
+        max_tokens: Optional[int],
+        stop: Optional[List[str]],
+    ) -> Dict[str, Any]:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload: Dict[str, Any] = {
+            "messages": messages,
+            "temperature": temperature,
+        }
+        if self.model:
+            payload["model"] = self.model
+        if max_tokens:
+            payload["max_tokens"] = max_tokens
+        if stop:
+            payload["stop"] = stop
+        return payload
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        url = self._url(f"/agents/{self.agent_id}/messages")
+        payload = self._payload(prompt, system_prompt, temperature, max_tokens, stop)
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await client.post(url, json=payload, headers=self._headers())
+                resp.raise_for_status()
+                data = resp.json()
+                return data.get("response", "") or data.get("message", "")
+        except httpx.HTTPError as e:
+            logger.error(f"Letta API error: {e}")
+            raise RuntimeError(f"Failed to generate completion: {e}")
+
+    def generate_sync(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        url = self._url(f"/agents/{self.agent_id}/messages")
+        payload = self._payload(prompt, system_prompt, temperature, max_tokens, stop)
+        try:
+            with httpx.Client(timeout=self.timeout) as client:
+                resp = client.post(url, json=payload, headers=self._headers())
+                resp.raise_for_status()
+                data = resp.json()
+                return data.get("response", "") or data.get("message", "")
+        except httpx.HTTPError as e:
+            logger.error(f"Letta API error: {e}")
+            raise RuntimeError(f"Failed to generate completion: {e}")
     
     def generate_sync(
         self,

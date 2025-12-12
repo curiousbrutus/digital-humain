@@ -1,6 +1,7 @@
 """Desktop automation agent implementation."""
 
 from typing import Dict, Any
+import subprocess
 from loguru import logger
 
 from digital_humain.core.agent import BaseAgent, AgentConfig, AgentState
@@ -168,8 +169,8 @@ Reasoning:"""
             if text_match:
                 text_to_type = text_match.group(1)
             else:
-                # Fallback to context or placeholder
-                text_to_type = state['context'].get('input_text', 'placeholder text')
+                # Fallback to context or task-derived text before using placeholder
+                text_to_type = state['context'].get('input_text') or state['task'] or 'placeholder text'
             
             result = self.actions.type_text(text_to_type)
             return {
@@ -178,6 +179,23 @@ Reasoning:"""
                 "result": result,
                 "text": text_to_type
             }
+
+        # Open Notepad when asked (common desktop task)
+        if "notepad" in reasoning_lower:
+            try:
+                subprocess.Popen(["notepad.exe"])
+                self.actions.wait(0.5)
+                return {
+                    "action": "open_notepad",
+                    "success": True,
+                    "result": "Launched notepad.exe"
+                }
+            except Exception as e:
+                return {
+                    "action": "open_notepad",
+                    "success": False,
+                    "error": str(e)
+                }
             
         # Press key action
         if any(word in reasoning_lower for word in ["press", "hit"]):

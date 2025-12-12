@@ -2,11 +2,24 @@
 
 # LLM Provider Configuration
 llm:
-  provider: ollama  # Options: ollama, vllm
-  model: deepseek-r1:1.5b     # Model name
+  provider: ollama  # Options: ollama, vllm, openrouter, letta
+  model: deepseek-r1:1.5b     # Default model name (Ollama)
   base_url: http://localhost:11434
   temperature: 0.7
   timeout: 300
+
+  # OpenRouter settings (used when provider=openrouter)
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    api_key: ${OPENROUTER_API_KEY:-}
+    default_model: openrouter/nvidia/nemotron-nano-12b-v2-vl:free
+
+  # Letta settings (used when provider=letta)
+  letta:
+    base_url: https://api.letta.ai
+    agent_id: ${LETTA_AGENT_ID:-}
+    api_key: ${LETTA_API_KEY:-}
+    default_model: openrouter/nvidia/nemotron-nano-12b-v2-vl:free
 
 # Vision Language Model Configuration
 vlm:
