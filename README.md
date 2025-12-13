@@ -15,6 +15,10 @@ A self-hosted Python-based agentic AI framework for enterprise desktop automatio
 - 🧩 **Episodic Memory**: Store and retrieve past experiences for enhanced decision making
 - 📝 **Memory Summarization**: Rolling summaries prevent prompt bloat in long-running tasks
 
+## Documentation
+
+See [docs/README.md](docs/README.md) for the full documentation index (architecture, reports, summaries, prompts, and expert recommendations).
+
 ## Architecture
 
 ```
@@ -160,6 +164,8 @@ python examples/memory_demo.py
 
 ## GUI Application
 
+### Running from Python
+
 Launch the enhanced GUI with memory and recording features:
 
 ```bash
@@ -172,6 +178,32 @@ The GUI includes:
 - **Recording Controls**: Record, save, and replay user demonstrations
 - **Memory Settings**: Configure episodic memory and replay speed
 - **Execution Logs**: Real-time logging of agent actions and decisions
+- **Stop Control**: Interrupt running tasks at any time
+
+### Building Standalone Executable
+
+Create a standalone .exe for Windows distribution:
+
+```bash
+# Install PyInstaller
+pip install pyinstaller
+
+# Build the executable
+python build_exe.py
+```
+
+The executable will be created in `dist/DigitalHumain.exe`. 
+
+**Important**: Copy these files alongside the .exe:
+- `config/config.yaml` - Application configuration
+- `.env` - API keys (optional, see below)
+- Create an empty `screenshots/` folder for screen captures
+
+- Create a `.env` file in the project root and add any secrets, e.g.:
+    - `OPENROUTER_API_KEY=sk-...`
+    - `LETTA_API_KEY=...` and `LETTA_AGENT_ID=...`
+- The app auto-loads `.env` on startup; the GUI pre-fills the API key field from the environment.
+- You can still override in the GUI and click **Set Env** to update the in-session environment without editing files.
 
 See [MEMORY_FEATURES.md](MEMORY_FEATURES.md) for detailed documentation on the memory system.
 

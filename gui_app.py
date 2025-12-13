@@ -8,6 +8,7 @@ from typing import List
 import ollama
 import httpx
 from loguru import logger
+from dotenv import load_dotenv
 
 # Optional voice input
 try:
@@ -17,6 +18,9 @@ except ImportError:  # Voice input stays optional
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Load environment variables from .env if present
+load_dotenv()
 
 from digital_humain.core.agent import AgentConfig, AgentRole
 from digital_humain.core.llm import OllamaProvider, OpenRouterProvider, LettaProvider
@@ -47,6 +51,8 @@ class DigitalHumainGUI:
         self.root.geometry("1200x850")
         self._init_style()
         self.current_models = []
+        self.cancel_event = None
+        self.agent_thread = None
         
         # Initialize memory systems
         self.demo_memory = DemonstrationMemory()
@@ -58,11 +64,12 @@ class DigitalHumainGUI:
 
     def _init_style(self):
         # Dark futuristic palette
-        bg = "#0f1116"
-        panel = "#161925"
-        accent = "#5ee7ff"
-        text = "#e6eef8"
-        subdued = "#8aa2c2"
+        # Higher-contrast palette for better readability
+        bg = "#0b0d12"
+        panel = "#12192a"
+        accent = "#4dd0ff"
+        text = "#e9eef7"
+        subdued = "#a3b7d8"
 
         self.root.configure(bg=bg)
         style = ttk.Style()
@@ -141,6 +148,9 @@ class DigitalHumainGUI:
         
         self.run_btn = ttk.Button(control_frame, text="Run Task", command=self.start_task)
         self.run_btn.pack(side=tk.LEFT, padx=5)
+
+        self.stop_btn = ttk.Button(control_frame, text="Stop", command=self.stop_task, state="disabled")
+        self.stop_btn.pack(side=tk.LEFT, padx=5)
 
         ttk.Button(control_frame, text="Voice Input", command=self.voice_to_text).pack(side=tk.LEFT, padx=5)
         ttk.Button(control_frame, text="Clear Logs", command=self.clear_logs).pack(side=tk.LEFT, padx=5)
@@ -314,10 +324,21 @@ class DigitalHumainGUI:
             logger.warning("Please select a model")
             return
             
+        # Prepare cancellation flag and thread
+        self.cancel_event = threading.Event()
         self.run_btn.configure(state='disabled')
-        threading.Thread(target=self.run_agent, args=(task, model, provider), daemon=True).start()
+        self.stop_btn.configure(state='normal')
+        self.agent_thread = threading.Thread(target=self.run_agent, args=(task, model, provider, self.cancel_event), daemon=True)
+        self.agent_thread.start()
 
-    def run_agent(self, task, model, provider):
+    def stop_task(self):
+        if self.cancel_event and not self.cancel_event.is_set():
+            self.cancel_event.set()
+            logger.warning("Stop requested; attempting to halt current task")
+        else:
+            logger.info("No active task to stop")
+
+    def run_agent(self, task, model, provider, cancel_event):
         try:
             logger.info(f"Starting task with provider={provider}, model={model}")
             
@@ -351,7 +372,7 @@ class DigitalHumainGUI:
                 tool_registry=tool_registry
             )
             
-            engine = AgentEngine(agent)
+            engine = AgentEngine(agent, cancel_event=cancel_event)
             engine.build_graph()
             
             # Retrieve relevant past episodes if enabled
@@ -388,7 +409,13 @@ class DigitalHumainGUI:
         except Exception as e:
             logger.error(f"Execution error: {e}")
         finally:
-            self.root.after(0, lambda: self.run_btn.configure(state='normal'))
+            self.root.after(0, self._reset_controls)
+
+    def _reset_controls(self):
+        self.run_btn.configure(state='normal')
+        self.stop_btn.configure(state='disabled')
+        self.cancel_event = None
+        self.agent_thread = None
 
     def _build_llm(self, provider: str, model: str, config: dict):
         if provider == "openrouter":

@@ -1,6 +1,7 @@
 """Agent execution engine with LangGraph integration."""
 
 from typing import Any, Dict, List, Optional, Callable
+import threading
 from langgraph.graph import StateGraph, END
 from loguru import logger
 
@@ -14,7 +15,7 @@ class AgentEngine:
     Provides graph-based orchestration for complex agent workflows.
     """
     
-    def __init__(self, agent: BaseAgent):
+    def __init__(self, agent: BaseAgent, cancel_event: Optional[threading.Event] = None):
         """
         Initialize the engine with an agent.
         
@@ -23,6 +24,8 @@ class AgentEngine:
         """
         self.agent = agent
         self.graph: Optional[StateGraph] = None
+        # Optional cancellation signal to allow user-initiated stop
+        self.cancel_event = cancel_event or threading.Event()
         logger.info(f"Initialized AgentEngine for agent: {agent.config.name}")
     
     def build_graph(self) -> StateGraph:
@@ -129,6 +132,10 @@ class AgentEngine:
     
     def _should_continue(self, state: AgentState) -> str:
         """Determine if execution should continue."""
+        if self.cancel_event.is_set():
+            logger.warning("Stop requested by user; halting graph execution")
+            state['error'] = state.get('error') or "Stopped by user"
+            return "end"
         if self.agent.should_continue(state):
             return "continue"
         return "end"

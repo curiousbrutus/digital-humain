@@ -4,6 +4,7 @@ from typing import Any, Dict
 from pathlib import Path
 import yaml
 from loguru import logger
+from dotenv import load_dotenv
 
 
 def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
@@ -16,6 +17,9 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
     Returns:
         Configuration dictionary
     """
+    # Load environment variables from .env if present
+    load_dotenv()
+
     path = Path(config_path)
     
     if not path.exists():

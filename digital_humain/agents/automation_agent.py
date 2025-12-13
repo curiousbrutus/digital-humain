@@ -145,13 +145,14 @@ Reasoning:"""
         
         logger.info(f"[Action Parser] {intent}")
         
-        # Handle no_action case
+        # Handle no_action case by forcing an observation step (screen analyze) to avoid loops
         if intent.action_type == "no_action":
+            analysis = self.screen.analyze_screen(state['task'])
             return {
-                "action": "no_action",
-                "success": True,
-                "reason": intent.reason,
-                "result": "No actionable command detected"
+                "action": "analyze_screen",
+                "success": analysis.get("success", False),
+                "result": analysis,
+                "reason": intent.reason
             }
         
         # Handle task completion
