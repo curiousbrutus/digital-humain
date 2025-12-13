@@ -319,16 +319,47 @@ class EnhancedAgentEngine:
             
         Returns:
             Verification result dictionary
+            
+        Note:
+            This is a basic implementation. For production use, extend with:
+            - VLM-based visual verification (screenshot comparison)
+            - Accessibility tree verification for GUI state
+            - File system checks for file operations
+            - API responses for network operations
         """
-        # Basic verification - can be extended with VLM checks
         action_type = action.get('action', 'unknown')
         
-        # For now, assume success if action reported success
-        # In production, would use VLM to verify actual state
+        # Basic verification based on action type
+        # TODO: Implement VLM-based verification for GUI actions
+        
+        # For GUI actions, we can at least verify the action completed
+        if action_type in ['click', 'type_text', 'press_key']:
+            # In production, would use VLM to verify expected UI change
+            # For now, rely on action success flag
+            verified = action.get('success', False)
+            method = 'action_success_flag'
+        
+        # For file operations, could verify file existence
+        elif action_type == 'file_write':
+            # Could add: check file exists and has expected content
+            verified = action.get('success', False)
+            method = 'action_success_flag'
+        
+        # For screen analysis, always assume valid
+        elif action_type == 'analyze_screen':
+            verified = action.get('success', False)
+            method = 'analysis_success_flag'
+        
+        else:
+            # Default: trust the action's success flag
+            verified = action.get('success', False)
+            method = 'basic_check'
+        
         return {
-            'verified': True,
+            'verified': verified,
             'action_type': action_type,
-            'method': 'basic_check'
+            'method': method,
+            'note': 'Basic verification - extend with VLM checks for production'
         }
     
     def _recovery_node(self, state: AgentState) -> AgentState:

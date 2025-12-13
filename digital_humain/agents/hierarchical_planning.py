@@ -296,24 +296,59 @@ Provide updated milestones starting from the current position:"""
         
         # Fallback if parsing failed
         if not milestones:
-            logger.warning("Failed to parse milestones, creating default plan")
-            milestones = [
-                Milestone(
+            logger.warning(
+                "Failed to parse milestones from LLM response. "
+                "This may indicate an issue with the LLM output format. "
+                "Consider adjusting the planning prompt or using a different model."
+            )
+            
+            # Analyze task to create more appropriate fallback milestones
+            task_lower = task.lower()
+            
+            # Create context-aware fallback milestones
+            if any(word in task_lower for word in ['open', 'launch', 'start']):
+                milestones.append(Milestone(
                     id="milestone_1",
-                    description=f"Analyze requirements for: {task}",
-                    success_criteria="Requirements clearly identified"
-                ),
-                Milestone(
-                    id="milestone_2",
-                    description=f"Execute main steps for: {task}",
-                    success_criteria="Primary actions completed"
-                ),
-                Milestone(
-                    id="milestone_3",
+                    description=f"Launch required application for: {task}",
+                    success_criteria="Application is open and ready"
+                ))
+            
+            if any(word in task_lower for word in ['analyze', 'review', 'examine']):
+                milestones.append(Milestone(
+                    id=f"milestone_{len(milestones) + 1}",
+                    description=f"Analyze and understand: {task}",
+                    success_criteria="Analysis complete with findings documented"
+                ))
+            
+            if any(word in task_lower for word in ['create', 'generate', 'write']):
+                milestones.append(Milestone(
+                    id=f"milestone_{len(milestones) + 1}",
+                    description=f"Create required outputs for: {task}",
+                    success_criteria="Outputs created successfully"
+                ))
+            
+            # Always add a verification milestone if we have others
+            if milestones:
+                milestones.append(Milestone(
+                    id=f"milestone_{len(milestones) + 1}",
                     description=f"Verify completion of: {task}",
-                    success_criteria="Task objectives met"
+                    success_criteria="All objectives verified as complete"
+                ))
+            
+            # If still no milestones, create a single comprehensive one
+            if not milestones:
+                logger.warning(
+                    "Could not create context-aware fallback. "
+                    "Using generic single-milestone plan."
                 )
-            ]
+                milestones = [
+                    Milestone(
+                        id="milestone_1",
+                        description=f"Complete task: {task}",
+                        success_criteria="Task completed as specified",
+                        max_attempts=5  # Allow more attempts for single milestone
+                    )
+                ]
         
         return milestones
     
