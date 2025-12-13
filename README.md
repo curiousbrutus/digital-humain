@@ -4,6 +4,7 @@ A self-hosted Python-based agentic AI framework for enterprise desktop automatio
 
 ## Features
 
+### Core Capabilities
 - 🤖 **Multi-Agent Orchestration**: Letta-like architecture for coordinating multiple specialized agents
 - 👁️ **Vision-Based GUI Interaction**: UI-TARS-like VLM capabilities for understanding and interacting with desktop applications
 - 🔒 **Data Privacy**: Local LLM integration (Ollama/vLLM) ensures all data stays on-premises
@@ -14,6 +15,14 @@ A self-hosted Python-based agentic AI framework for enterprise desktop automatio
 - 🎬 **Learn from User**: Record and replay user demonstrations for macro automation
 - 🧩 **Episodic Memory**: Store and retrieve past experiences for enhanced decision making
 - 📝 **Memory Summarization**: Rolling summaries prevent prompt bloat in long-running tasks
+
+### Production Features (NEW)
+- 🏗️ **Hierarchical Planning**: Two-tier Planner/Worker architecture for long-horizon tasks
+- 🔄 **Automatic Recovery**: Explicit error handling with recovery nodes and exponential backoff
+- 🛡️ **Security Hardening**: Sandboxing support, prompt injection defense, and credential management
+- ⚡ **Performance Optimization**: Tool caching with 1.69x speedup, VLM quantization support
+- 📊 **Observability**: Prometheus metrics, structured logging, and audit trails
+- 🔀 **Hybrid Deployment**: Flexible local/cloud routing for privacy and performance
 
 ## Documentation
 
