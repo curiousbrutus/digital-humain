@@ -143,7 +143,7 @@ class MyTool(BaseTool):
 - **No External API Calls**: Default to local Ollama for LLM inference
 - **Environment Variables**: Use `.env` for API keys (never commit)
 - **Data Privacy**: All processing happens locally by default
-- **Input Validation**: Use Pydantic for all user inputs
+- **Input Validation**: Use Pydantic for structured inputs (configuration, API parameters, agent inputs, tool parameters)
 
 ## Configuration
 
@@ -265,7 +265,7 @@ except SpecificException as e:
 
 ## Resources
 
-- [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
+- [LangGraph Documentation](https://python.langchain.com/docs/langgraph/)
 - [Ollama Documentation](https://ollama.ai/docs)
 - [PyAutoGUI Documentation](https://pyautogui.readthedocs.io/)
 - [Project Documentation](docs/README.md)
