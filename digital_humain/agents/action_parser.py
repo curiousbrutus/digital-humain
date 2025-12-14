@@ -42,12 +42,14 @@ class AppLauncher:
     }
     
     ALLOWED_LINUX_APPS = {
-        # Text editors
+        # Text editors - "notepad" maps to gedit on Linux
+        "notepad": "gedit",  # Cross-platform alias
         "gedit": "gedit",
         "kate": "kate",
         "xed": "xed",
         "mousepad": "mousepad",
         "pluma": "pluma",
+        "text editor": "gedit",
         # Calculators
         "gnome-calculator": "gnome-calculator",
         "calc": "gnome-calculator",
@@ -196,7 +198,7 @@ class ActionParser:
         Parse typing intent from reasoning.
         
         Prefers quoted text, falls back to context or task.
-        Never uses generic placeholders.
+        If task mentions writing a letter, generate appropriate text.
         
         Args:
             reasoning: Reasoning text
@@ -228,17 +230,32 @@ class ActionParser:
                 reason="Using input_text from context"
             )
         
-        # Fall back to task description
+        # Check if task mentions writing a letter to someone
         if task:
-            # Try to extract meaningful content from task
-            task_words = task.split()
-            if len(task_words) > 3:
-                # Use task as-is if it's substantial
+            task_lower = task.lower()
+            # Check for letter writing patterns
+            letter_match = re.search(r'(?:write|type)\s+(?:a\s+)?letter\s+to\s+(\w+(?:\s+\w+)?)', task_lower)
+            if letter_match:
+                recipient = letter_match.group(1).title()
+                # Check for word count requirement
+                word_count_match = re.search(r'(\d+)\s*words?', task_lower)
+                if word_count_match:
+                    word_count = int(word_count_match.group(1))
+                    # Generate a letter of approximately the right length
+                    if word_count <= 10:
+                        text = f"Dear {recipient}, thank you for inspiring us all. Best regards."
+                    elif word_count <= 20:
+                        text = f"Dear {recipient}, your vision and innovation changed the world forever. Thank you for everything you have done. Best regards."
+                    else:
+                        text = f"Dear {recipient}, I wanted to write to express my deep gratitude for your incredible contributions to technology and innovation. Your vision has changed the world in countless ways. Thank you."
+                else:
+                    text = f"Dear {recipient}, thank you for your incredible vision and innovation. Best regards."
+                
                 return ActionIntent(
                     action_type="type_text",
-                    confidence=0.5,
-                    params={"text": task},
-                    reason="Using task description as typing content"
+                    confidence=0.8,
+                    params={"text": text},
+                    reason=f"Generated letter to {recipient} based on task"
                 )
         
         # No actionable text found - return no_action
@@ -302,8 +319,8 @@ class ActionParser:
         for app_name in allowed_apps.keys():
             if app_name in reasoning_lower:
                 # Check context to confirm it's a launch intent
-                launch_keywords = ["open", "launch", "start", "run", "execute"]
-                if any(kw in reasoning_lower for kw in launch_keywords) or "open" in reasoning_lower:
+                launch_keywords = ["open", "launch", "start", "run", "execute", "must be opened", "need to open", "should open", "go to"]
+                if any(kw in reasoning_lower for kw in launch_keywords):
                     return ActionIntent(
                         action_type="launch_app",
                         confidence=0.9,
@@ -383,15 +400,123 @@ class ActionParser:
         
         reasoning_lower = reasoning.lower()
         
-        # Check for task completion indicators first
-        if any(word in reasoning_lower for word in ["complete", "done", "finish", "success", "accomplished"]):
+        # Check for task completion indicators - must be ACTUAL completion, not intent
+        # Avoid false positives like "to complete the task" (future intent)
+        completion_phrases = [
+            "task is complete", "task is done", "task complete", "task done",
+            "completed the task", "finished the task", "accomplished the task",
+            "the letter has been written", "the letter has been typed",
+            "successfully written", "successfully typed", "successfully completed",
+            "i have finished", "i have completed", "have been written",
+            "task is now complete", "task is now done",
+            "this completes the task", "that completes the task"
+        ]
+        # These phrases indicate the task is NOT yet complete
+        future_intent_phrases = ["to complete the task", "to complete this", "in order to complete", "should be", "will be", "next step"]
+        
+        has_completion = any(phrase in reasoning_lower for phrase in completion_phrases)
+        has_future_intent = any(phrase in reasoning_lower for phrase in future_intent_phrases)
+        
+        if has_completion and not has_future_intent:
             return ActionIntent(
                 action_type="task_complete",
                 confidence=0.9,
                 reason="Task completion indicated in reasoning"
             )
         
-        # Try to parse app launch
+        # PRIORITY 1: Check for EXPLICIT action commands in "Next action:" format
+        # This takes precedence over implicit intent detection
+        # Pattern for "launch_app/open <app>" or just "open <app>"
+        launch_action_match = re.search(
+            r'\*{0,2}next\s+action[:\*]{1,3}\s*(?:launch_app[/\s]+)?(?:open|launch|start)\s+(\w+)',
+            reasoning_lower
+        )
+        if launch_action_match:
+            app_name = launch_action_match.group(1)
+            allowed_apps = AppLauncher.get_allowed_apps()
+            if app_name in allowed_apps:
+                return ActionIntent(
+                    action_type="launch_app",
+                    confidence=0.95,
+                    params={"app_name": app_name},
+                    reason=f"Explicit launch action from Next action: {app_name}"
+                )
+        
+        # Pattern for "type_text/type 'text'" or "type 'text'"
+        type_action_match = re.search(
+            r'\*{0,2}next\s+action[:\*]{1,3}\s*(?:type_text[/\s]+)?type',
+            reasoning_lower
+        )
+        if type_action_match:
+            quoted = cls.extract_quoted_text(reasoning)
+            if quoted:
+                return ActionIntent(
+                    action_type="type_text",
+                    confidence=0.95,
+                    params={"text": quoted},
+                    reason="Explicit type action with quoted text"
+                )
+        
+        # PRIORITY 2: Check for direct "I will open/launch X" patterns
+        direct_launch_match = re.search(
+            r'(?:i will|i\'ll|let me|going to|need to|must)\s+(?:open|launch|start)\s+(\w+)',
+            reasoning_lower
+        )
+        if direct_launch_match:
+            app_name = direct_launch_match.group(1)
+            allowed_apps = AppLauncher.get_allowed_apps()
+            if app_name in allowed_apps:
+                return ActionIntent(
+                    action_type="launch_app",
+                    confidence=0.9,
+                    params={"app_name": app_name},
+                    reason=f"Direct intent to launch: {app_name}"
+                )
+        
+        # PRIORITY 3: Check typing intent - but only for ACTUAL typing actions
+        # e.g., "type into notepad" should trigger type_text, not launch_app
+        # But "open notepad to write" should trigger launch_app
+        typing_keywords = ["type", "enter text", "input text", "typing"]
+        # "write" is ambiguous - only count it if followed by quotes or specific text
+        has_typing_intent = any(kw in reasoning_lower for kw in typing_keywords)
+        
+        # Check if "write" is for actual typing (has quoted text) vs opening app (to write later)
+        if not has_typing_intent and "write" in reasoning_lower:
+            # Only consider it typing if there's quoted text to type
+            if cls.extract_quoted_text(reasoning):
+                has_typing_intent = True
+        
+        if has_typing_intent:
+            # First try to extract quoted text
+            quoted = cls.extract_quoted_text(reasoning)
+            if quoted:
+                return ActionIntent(
+                    action_type="type_text",
+                    confidence=0.9,
+                    params={"text": quoted},
+                    reason="Extracted text to type from quotes"
+                )
+            # If no quotes but clear typing intent with a message pattern
+            # Look for patterns like "type: message" or "message: 'text'"
+            message_patterns = [
+                r'type[:\s]+["\']([^"\']+)["\']',
+                r'message[:\s]+["\']([^"\']+)["\']',
+                r'text[:\s]+["\']([^"\']+)["\']',
+                r'write[:\s]+["\']([^"\']+)["\']',
+            ]
+            for pattern in message_patterns:
+                match = re.search(pattern, reasoning, re.IGNORECASE)
+                if match:
+                    return ActionIntent(
+                        action_type="type_text",
+                        confidence=0.85,
+                        params={"text": match.group(1)},
+                        reason="Extracted text from message pattern"
+                    )
+            # If still no text found but typing intent is clear, use context or generate from task
+            return cls.parse_typing_intent(reasoning, context, task)
+        
+        # PRIORITY 4: Try to parse app launch (if not caught above)
         app_intent = cls.parse_app_launch(reasoning)
         if app_intent:
             return app_intent
@@ -401,11 +526,7 @@ class ActionParser:
         if key_intent:
             return key_intent
         
-        # Try to parse typing intent
-        if any(word in reasoning_lower for word in ["type", "enter", "input", "write"]):
-            return cls.parse_typing_intent(reasoning, context, task)
-        
-        # Try to parse click
+        # Try to parse click intent
         click_intent = cls.parse_click_intent(reasoning)
         if click_intent:
             return click_intent

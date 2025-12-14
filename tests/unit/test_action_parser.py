@@ -109,13 +109,13 @@ class TestActionParser:
         assert intent.params["text"] == "Context text here"
     
     def test_parse_typing_with_task_fallback(self):
-        """Test parsing typing intent with task fallback."""
+        """Test parsing typing intent with letter task fallback."""
         reasoning = "Type the message"
-        task = "Write a message to the team"
+        task = "Write a letter to Bob"
         intent = ActionParser.parse_typing_intent(reasoning, task=task)
         
         assert intent.action_type == "type_text"
-        assert "team" in intent.params["text"].lower()
+        assert "bob" in intent.params["text"].lower()
     
     def test_parse_typing_no_content(self):
         """Test parsing typing intent with no actionable content."""

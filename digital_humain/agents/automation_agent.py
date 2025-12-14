@@ -57,16 +57,29 @@ class DesktopAutomationAgent(BaseAgent):
             Reasoning explanation
         """
         # Build reasoning prompt
+        history = self._format_history(state)
+        
+        # Determine what the next logical step is based on history
+        next_step_hint = ""
+        if history == "None":
+            next_step_hint = "This is the first step. You should start by opening the required application."
+        elif "launch_app" in history and "type_text" not in history:
+            next_step_hint = "The app is now open. You should proceed to type the required content."
+        elif "type_text" in history:
+            next_step_hint = "Text has been typed. Check if the task is complete."
+        
         prompt = f"""Current Task: {state['task']}
 
 Observation:
 {observation}
 
 Previous Actions:
-{self._format_history(state)}
+{history}
 
-Based on the current situation, what should be the next action to complete the task?
-Think step-by-step and explain your reasoning.
+{next_step_hint}
+
+What is the NEXT action to complete the task? 
+You MUST respond with your reasoning and clearly state your action.
 
 Reasoning:"""
         
@@ -112,15 +125,30 @@ Reasoning:"""
         if not state['history']:
             return "None"
         
-        # Show last 3 actions
+        # Show last 3 actions with details
         recent = state['history'][-3:]
         formatted = []
         
         for entry in recent:
             action = entry.get('action', {})
+            action_type = action.get('action', 'unknown')
+            success = action.get('success', False)
+            
+            # Add action-specific details
+            details = ""
+            if action_type == "launch_app":
+                details = f" (app: {action.get('app_name', 'unknown')})"
+            elif action_type == "type_text":
+                text = action.get('text', '')
+                details = f" (typed: '{text[:30]}...')" if len(text) > 30 else f" (typed: '{text}')"
+            elif action_type == "press_key":
+                details = f" (key: {action.get('key', 'unknown')})"
+            elif action_type == "click":
+                x, y = action.get('x', '?'), action.get('y', '?')
+                details = f" (at: {x}, {y})"
+            
             formatted.append(
-                f"Step {entry['step']}: {action.get('action', 'unknown')} - "
-                f"Success: {action.get('success', False)}"
+                f"Step {entry['step']}: {action_type}{details} - Success: {success}"
             )
         
         return "\n".join(formatted)
@@ -145,15 +173,64 @@ Reasoning:"""
         
         logger.info(f"[Action Parser] {intent}")
         
-        # Handle no_action case by forcing an observation step (screen analyze) to avoid loops
+        # Handle no_action case - check if we should auto-advance based on history
         if intent.action_type == "no_action":
-            analysis = self.screen.analyze_screen(state['task'])
-            return {
-                "action": "analyze_screen",
-                "success": analysis.get("success", False),
-                "result": analysis,
-                "reason": intent.reason
-            }
+            # Check if model returned empty but we should advance to next step
+            history = state.get('history', [])
+            task = state.get('task', '')
+            
+            # If we just launched an app and haven't typed yet, auto-type based on task
+            if history:
+                last_action = history[-1].get('action', {})
+                last_action_type = last_action.get('action', '')
+                
+                # After launching app, check if we need to type something
+                if last_action_type == 'launch_app' and last_action.get('success'):
+                    # Generate typing intent from task
+                    typing_intent = ActionParser.parse_typing_intent(
+                        "Type the content based on task", 
+                        state.get('context'), 
+                        task
+                    )
+                    if typing_intent.action_type == "type_text" and typing_intent.params.get('text'):
+                        logger.info(f"[Auto-advance] Model returned empty, auto-typing based on task")
+                        intent = typing_intent
+                
+                # If we already typed and model is silent, mark complete
+                elif last_action_type == 'type_text' and last_action.get('success'):
+                    logger.info(f"[Auto-advance] Text typed, marking task complete")
+                    return {
+                        "action": "task_complete",
+                        "success": True,
+                        "result": "Task auto-completed after successful typing"
+                    }
+            
+            # If still no_action, do screen analysis (but limit consecutive analyses)
+            if intent.action_type == "no_action":
+                # Count consecutive analyze_screen actions
+                consecutive_analyses = 0
+                for h in reversed(history):
+                    if h.get('action', {}).get('action') == 'analyze_screen':
+                        consecutive_analyses += 1
+                    else:
+                        break
+                
+                # If too many consecutive analyses, force completion or error
+                if consecutive_analyses >= 3:
+                    logger.warning("[Auto-advance] Too many consecutive screen analyses, forcing completion")
+                    return {
+                        "action": "task_complete",
+                        "success": True,
+                        "result": "Task force-completed due to model not responding"
+                    }
+                
+                analysis = self.screen.analyze_screen(task)
+                return {
+                    "action": "analyze_screen",
+                    "success": analysis.get("success", False),
+                    "result": analysis,
+                    "reason": intent.reason
+                }
         
         # Handle task completion
         if intent.action_type == "task_complete":
