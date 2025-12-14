@@ -23,6 +23,8 @@ A self-hosted Python-based agentic AI framework for enterprise desktop automatio
 - ⚡ **Performance Optimization**: Tool caching with 1.69x speedup, VLM quantization support
 - 📊 **Observability**: Prometheus metrics, structured logging, and audit trails
 - 🔀 **Hybrid Deployment**: Flexible local/cloud routing for privacy and performance
+- 🎯 **Smart Action Parsing**: Priority-based intent detection with explicit action command recognition
+- 🚀 **Auto-Advance Fallback**: Intelligent task progression when LLM returns empty responses
 
 ## Documentation
 
