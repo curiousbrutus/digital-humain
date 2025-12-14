@@ -3,7 +3,7 @@
 # LLM Provider Configuration
 llm:
   provider: ollama  # Options: ollama, vllm, openrouter, letta
-  model: deepseek-r1:1.5b     # Default model name (Ollama)
+  model: moondream     # Default model name (Ollama)
   base_url: http://localhost:11434
   temperature: 0.7
   timeout: 300

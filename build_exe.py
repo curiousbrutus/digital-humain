@@ -1,14 +1,48 @@
-"""Build script for creating Digital Humain executable."""
+"""Build script for creating Digital Humain executable.
+
+Cross-platform build script supporting Windows, Linux, and macOS.
+"""
 
 import PyInstaller.__main__
 import sys
+import platform
 from pathlib import Path
+
+
+def get_platform_info() -> dict:
+    """Get platform-specific build information."""
+    system = platform.system()
+    
+    if system == "Windows":
+        return {
+            "separator": ";",
+            "exe_name": "DigitalHumain.exe",
+            "icon_ext": ".ico",
+        }
+    elif system == "Darwin":  # macOS
+        return {
+            "separator": ":",
+            "exe_name": "DigitalHumain.app",
+            "icon_ext": ".icns",
+        }
+    else:  # Linux
+        return {
+            "separator": ":",
+            "exe_name": "DigitalHumain",
+            "icon_ext": ".png",
+        }
+
 
 def build():
     """Build the executable using PyInstaller."""
     
     # Get project root
     root = Path(__file__).parent
+    
+    # Get platform-specific settings
+    plat = get_platform_info()
+    sep = plat["separator"]
+    exe_name = plat["exe_name"]
     
     # PyInstaller arguments
     args = [
@@ -18,9 +52,9 @@ def build():
         '--windowed',  # No console window
         '--clean',
         
-        # Add data files
-        f'--add-data={root / "config" / "config.yaml"}{";config" if sys.platform == "win32" else ":config"}',
-        f'--add-data={root / "digital_humain"}{";digital_humain" if sys.platform == "win32" else ":digital_humain"}',
+        # Add data files (platform-aware separator)
+        f'--add-data={root / "config" / "config.yaml"}{sep}config',
+        f'--add-data={root / "digital_humain"}{sep}digital_humain',
         
         # Hidden imports
         '--hidden-import=tiktoken_ext.openai_public',
@@ -33,6 +67,14 @@ def build():
         '--hidden-import=digital_humain.orchestration',
         '--hidden-import=digital_humain.utils',
         
+        # Platform-specific hidden imports
+        '--hidden-import=pynput.keyboard._xorg' if platform.system() == "Linux" else '',
+        '--hidden-import=pynput.mouse._xorg' if platform.system() == "Linux" else '',
+        '--hidden-import=pynput.keyboard._win32' if platform.system() == "Windows" else '',
+        '--hidden-import=pynput.mouse._win32' if platform.system() == "Windows" else '',
+        '--hidden-import=pynput.keyboard._darwin' if platform.system() == "Darwin" else '',
+        '--hidden-import=pynput.mouse._darwin' if platform.system() == "Darwin" else '',
+        
         # Exclude unnecessary modules
         '--exclude-module=streamlit',
         '--exclude-module=matplotlib',
@@ -44,14 +86,17 @@ def build():
         '--specpath=.',
     ]
     
-    print("Building Digital Humain executable...")
-    print(f"Output will be in: {root / 'dist' / 'DigitalHumain.exe'}")
+    # Filter out empty strings from platform-specific imports
+    args = [arg for arg in args if arg]
+    
+    print(f"Building Digital Humain for {platform.system()}...")
+    print(f"Output will be in: {root / 'dist' / exe_name}")
     
     PyInstaller.__main__.run(args)
     
     print("\n✅ Build complete!")
-    print(f"Executable: {root / 'dist' / 'DigitalHumain.exe'}")
-    print("\nNote: Make sure to copy the following alongside the .exe:")
+    print(f"Executable: {root / 'dist' / exe_name}")
+    print("\nNote: Make sure to copy the following alongside the executable:")
     print("  - config/config.yaml")
     print("  - .env (if using API keys)")
     print("  - screenshots/ folder (will be created automatically)")

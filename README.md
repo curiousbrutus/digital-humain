@@ -62,6 +62,15 @@ digital_humain/
 
 - Python 3.9+
 - Ollama (for local LLM inference)
+- Tesseract OCR (for screen text extraction)
+
+### Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **Linux** | ✅ Full Support | Tested on Ubuntu 22.04+ |
+| **Windows** | ✅ Full Support | Windows 10/11 |
+| **macOS** | ✅ Supported | Requires additional setup |
 
 ### Setup
 
@@ -76,21 +85,139 @@ cd digital-humain
 pip install -r requirements.txt
 ```
 
-3. Install and start Ollama:
+3. Install Tesseract OCR:
 ```bash
-# Install Ollama (see https://ollama.ai for instructions)
-# Then pull a model
-ollama pull llama2
+# Linux (Ubuntu/Debian)
+sudo apt install tesseract-ocr
+
+# Windows - Download from:
+# https://github.com/UB-Mannheim/tesseract/wiki
+
+# macOS
+brew install tesseract
+```
+
+4. Install screenshot dependencies (Linux only):
+```bash
+# Required for PyAutoGUI screenshots on Linux
+sudo apt install gnome-screenshot scrot
+```
+
+5. Install and configure Ollama (see next section)
+
+## LLM & VLM Configuration
+
+Digital Humain supports multiple LLM providers and Vision Language Models for different use cases.
+
+### Ollama (Recommended for Privacy)
+
+Ollama provides local LLM inference - all processing stays on your machine.
+
+```bash
+# Install Ollama (https://ollama.ai)
+curl -fsSL https://ollama.ai/install.sh | sh
 
 # Start Ollama server
 ollama serve
 ```
 
-4. Configure the system:
+#### Recommended Models by System Specs
+
+| RAM | GPU VRAM | Recommended Models | Use Case |
+|-----|----------|-------------------|----------|
+| **8GB** | None | `llama3.2:1b`, `qwen2.5:1.5b` | Basic agent reasoning |
+| **16GB** | 2-4GB | `moondream`, `llama3.2:3b` | VLM + reasoning |
+| **32GB** | 8GB+ | `llama3.2-vision`, `llava:7b` | Full VLM capabilities |
+| **64GB+** | 12GB+ | `llava:13b`, `llama3.1:70b` | Enterprise workloads |
+
+#### Setting Up Moondream (Lightweight VLM)
+
+**Moondream** is ideal for resource-constrained systems - only ~1.7GB and runs on CPU:
+
 ```bash
-# Edit config/config.yaml to customize settings
-# Default configuration uses Ollama with llama2 model
+# Pull moondream model
+ollama pull moondream
+
+# Test it
+ollama run moondream "Describe what you see" --images ./screenshot.png
 ```
+
+**Moondream capabilities:**
+- ✅ Screen/UI element identification
+- ✅ Text recognition in images
+- ✅ Button/form field detection
+- ✅ Layout understanding
+- ⚠️ Limited complex reasoning (pair with text LLM)
+
+#### Setting Up Llama 3.2 Vision (Full VLM)
+
+For systems with more resources:
+
+```bash
+# Pull llama3.2-vision (requires ~4GB RAM)
+ollama pull llama3.2-vision
+
+# Or for text-only reasoning
+ollama pull llama3.2
+```
+
+#### Configuration
+
+Update `config/config.yaml`:
+
+```yaml
+llm:
+  provider: ollama
+  model: moondream  # or llama3.2, llama3.2-vision, etc.
+  base_url: http://localhost:11434
+  temperature: 0.7
+  timeout: 300
+```
+
+### OpenRouter (Cloud Alternative)
+
+For complex tasks or when local resources are limited, use OpenRouter's API:
+
+```yaml
+llm:
+  provider: openrouter
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    api_key: ${OPENROUTER_API_KEY}
+    default_model: google/gemini-2.0-flash-exp:free
+```
+
+**Free models on OpenRouter:**
+- `google/gemini-2.0-flash-exp:free` - Fast, good for reasoning
+- `meta-llama/llama-3.2-11b-vision-instruct:free` - Vision capable
+- `qwen/qwen-2.5-72b-instruct:free` - Strong reasoning
+
+Create `.env` file:
+```bash
+OPENROUTER_API_KEY=sk-or-v1-xxxxx
+```
+
+### Hybrid Setup (Recommended for Production)
+
+Use local models for privacy-sensitive screen analysis, cloud for complex reasoning:
+
+```python
+# Local VLM for screen capture (no data leaves your machine)
+screen_analyzer = ScreenAnalyzer(vlm_provider=OllamaProvider(model="moondream"))
+
+# Cloud LLM for complex planning (only sends task descriptions)
+planner_llm = OpenRouterProvider(model="google/gemini-2.0-flash-exp:free")
+```
+
+### VLM Comparison Table
+
+| Model | Size | Speed | Quality | Best For |
+|-------|------|-------|---------|----------|
+| **moondream** | 1.7GB | ⚡ Fast | Good | Low-resource systems, basic UI detection |
+| **llava:7b** | 4.5GB | Medium | Better | General desktop automation |
+| **llama3.2-vision** | 4GB | Medium | Better | Balanced performance |
+| **llava:13b** | 8GB | Slow | Best | Complex UI analysis |
+| **GPT-4V** (API) | N/A | Fast | Excellent | Maximum accuracy (requires API) |
 
 ## Quick Start
 
@@ -106,8 +233,8 @@ from digital_humain.vlm.actions import GUIActions
 from digital_humain.tools.base import ToolRegistry
 from digital_humain.tools.file_tools import FileReadTool
 
-# Initialize components
-llm = OllamaProvider(model="llama2")
+# Initialize components with moondream VLM
+llm = OllamaProvider(model="moondream")  # or "llama3.2-vision"
 screen_analyzer = ScreenAnalyzer()
 gui_actions = GUIActions()
 tool_registry = ToolRegistry()
@@ -131,6 +258,26 @@ agent = DesktopAutomationAgent(
 # Execute task
 engine = AgentEngine(agent)
 result = engine.run("Analyze the current screen and identify key elements")
+```
+
+### Using VLM for Screen Analysis
+
+```python
+from digital_humain.vlm.screen_analyzer import ScreenAnalyzer
+from digital_humain.core.llm import OllamaProvider
+
+# Initialize with moondream for lightweight VLM
+vlm = OllamaProvider(model="moondream")
+analyzer = ScreenAnalyzer(vlm_provider=vlm, save_screenshots=True)
+
+# Capture and analyze current screen
+result = analyzer.analyze_screen("Find the login button")
+print(result)
+
+# Get screen info
+info = analyzer.get_screen_info()
+print(f"Screen size: {info['screen_size']}")
+print(f"Mouse position: {info['mouse_position']}")
 ```
 
 ### Multi-Agent Orchestration
@@ -191,7 +338,7 @@ The GUI includes:
 
 ### Building Standalone Executable
 
-Create a standalone .exe for Windows distribution:
+Create a standalone executable for distribution:
 
 ```bash
 # Install PyInstaller
@@ -201,9 +348,12 @@ pip install pyinstaller
 python build_exe.py
 ```
 
-The executable will be created in `dist/DigitalHumain.exe`. 
+**Output by platform:**
+- **Windows**: `dist/DigitalHumain.exe`
+- **Linux**: `dist/DigitalHumain`
+- **macOS**: `dist/DigitalHumain.app`
 
-**Important**: Copy these files alongside the .exe:
+**Important**: Copy these files alongside the executable:
 - `config/config.yaml` - Application configuration
 - `.env` - API keys (optional, see below)
 - Create an empty `screenshots/` folder for screen captures
@@ -248,9 +398,18 @@ The coordinator:
 
 Vision capabilities include:
 - Screen capture and analysis
-- Element detection using OCR
+- Element detection using OCR (Tesseract) and VLM
 - GUI action execution (click, type, scroll, etc.)
 - Visual reasoning for automation
+
+**Supported VLM workflows:**
+
+| Workflow | Local Model | Cloud Alternative |
+|----------|-------------|-------------------|
+| UI Element Detection | moondream | GPT-4V |
+| Text Extraction | Tesseract OCR | Google Vision |
+| Screen Understanding | llama3.2-vision | Claude Vision |
+| Action Planning | llama3.2 | GPT-4 |
 
 ### Tool System
 
@@ -316,10 +475,56 @@ class MyCustomTool(BaseTool):
 
 ## Security & Privacy
 
-- All LLM inference runs locally (Ollama/vLLM)
-- No data sent to external APIs
+- All LLM inference runs locally (Ollama/vLLM) by default
+- VLM screen analysis happens on-device with moondream
+- No data sent to external APIs unless explicitly configured
 - Full control over data processing
 - Suitable for sensitive enterprise data
+- Optional cloud fallback for complex reasoning tasks
+
+## Troubleshooting
+
+### Common Issues
+
+**Ollama connection error:**
+```bash
+# Make sure Ollama is running
+ollama serve
+
+# Check if it's accessible
+curl http://localhost:11434/api/tags
+```
+
+**Tesseract not found:**
+```bash
+# Linux
+sudo apt install tesseract-ocr
+
+# Verify installation
+tesseract --version
+```
+
+**PyAutoGUI display issues (Linux):**
+```bash
+# Install required X11 libraries and screenshot tools
+sudo apt install scrot gnome-screenshot python3-tk python3-dev
+```
+
+**Numpy/OpenCV binary incompatibility:**
+```bash
+# If you see "numpy.dtype size changed" error:
+pip install "numpy>=1.24,<2.0"
+pip install "opencv-python-headless>=4.8,<4.12"
+```
+
+**Out of memory with VLM:**
+```bash
+# Use a smaller model
+ollama pull moondream  # Only 1.7GB
+
+# Or use quantized versions
+ollama pull llama3.2-vision:4bit
+```
 
 ## Requirements
 
@@ -328,10 +533,14 @@ See `requirements.txt` for full dependency list. Key dependencies:
 - `langgraph`: Agent orchestration
 - `langchain`: LLM framework
 - `ollama`: Local LLM integration
-- `pillow`, `opencv-python`: Image processing
+- `pillow`, `opencv-python-headless`: Image processing
+- `numpy>=1.24,<2.0`: Array operations (version constrained for compatibility)
 - `pyautogui`: GUI automation
+- `gnome-screenshot` (Linux): Screenshot capture
+- `pytesseract`: OCR text extraction
 - `pydantic`: Data validation
 - `loguru`: Logging
+- `pynput`: Action recording
 
 ## License
 

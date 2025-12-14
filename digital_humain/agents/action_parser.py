@@ -36,15 +36,37 @@ class AppLauncher:
         "mspaint": "mspaint.exe",
         "paint": "mspaint.exe",
         "explorer": "explorer.exe",
+        "cmd": "cmd.exe",
+        "powershell": "powershell.exe",
+        "terminal": "wt.exe",  # Windows Terminal
     }
     
     ALLOWED_LINUX_APPS = {
+        # Text editors
         "gedit": "gedit",
+        "kate": "kate",
+        "xed": "xed",
+        "mousepad": "mousepad",
+        "pluma": "pluma",
+        # Calculators
         "gnome-calculator": "gnome-calculator",
         "calc": "gnome-calculator",
         "calculator": "gnome-calculator",
+        "kcalc": "kcalc",
+        # File managers
         "nautilus": "nautilus",
         "files": "nautilus",
+        "dolphin": "dolphin",
+        "nemo": "nemo",
+        "thunar": "thunar",
+        # Terminal
+        "terminal": "gnome-terminal",
+        "gnome-terminal": "gnome-terminal",
+        "konsole": "konsole",
+        "xterm": "xterm",
+        # Browsers
+        "firefox": "firefox",
+        "chromium": "chromium-browser",
     }
     
     ALLOWED_MAC_APPS = {
