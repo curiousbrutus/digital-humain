@@ -27,7 +27,16 @@ class ActionIntent:
 
 
 class AppLauncher:
-    """Safe application launcher with allowlist."""
+    """Safe application launcher with allowlist and auto-discovery."""
+    
+    # Cached discovered apps
+    _discovered_apps = None
+    
+    @classmethod
+    def refresh_discovered_apps(cls):
+        """Force refresh of discovered desktop applications."""
+        cls._discovered_apps = cls.discover_desktop_apps()
+        logger.info(f"Refreshed app discovery: {len(cls._discovered_apps)} apps found")
     
     ALLOWED_WINDOWS_APPS = {
         "notepad": "notepad.exe",
@@ -79,16 +88,71 @@ class AppLauncher:
     }
     
     @classmethod
-    def get_allowed_apps(cls) -> Dict[str, str]:
-        """Get allowed apps for current platform."""
+    def discover_desktop_apps(cls) -> Dict[str, str]:
+        """Discover applications on Desktop and common locations."""
+        import os
+        from pathlib import Path
+        
+        discovered = {}
         system = platform.system()
+        
         if system == "Windows":
-            return cls.ALLOWED_WINDOWS_APPS
+            # Search locations
+            search_paths = [
+                Path.home() / "Desktop",
+                Path.home() / "OneDrive" / "Desktop",
+                Path("C:\\Program Files"),
+                Path("C:\\Program Files (x86)"),
+            ]
+            
+            for search_path in search_paths:
+                if not search_path.exists():
+                    continue
+                
+                try:
+                    # Find .exe and .lnk files
+                    for item in search_path.iterdir():
+                        if item.is_file() and item.suffix.lower() in ['.exe', '.lnk']:
+                            # Use stem (filename without extension) as key
+                            name_key = item.stem.lower()
+                            discovered[name_key] = str(item)
+                            logger.debug(f"Discovered app: {name_key} -> {item}")
+                        elif item.is_dir() and search_path.name.startswith("Program"):
+                            # Check one level deep in Program Files
+                            try:
+                                for subitem in item.iterdir():
+                                    if subitem.is_file() and subitem.suffix.lower() == '.exe':
+                                        name_key = subitem.stem.lower()
+                                        if name_key not in discovered:  # Don't override Desktop items
+                                            discovered[name_key] = str(subitem)
+                                            logger.debug(f"Discovered app: {name_key} -> {subitem}")
+                            except (PermissionError, OSError):
+                                continue
+                except (PermissionError, OSError) as e:
+                    logger.debug(f"Could not scan {search_path}: {e}")
+        
+        logger.info(f"Discovered {len(discovered)} applications")
+        return discovered
+    
+    @classmethod
+    def get_allowed_apps(cls) -> Dict[str, str]:
+        """Get allowed apps for current platform, including discovered apps."""
+        # Cache discovered apps
+        if cls._discovered_apps is None:
+            cls._discovered_apps = cls.discover_desktop_apps()
+        
+        system = platform.system()
+        base_apps = {}
+        if system == "Windows":
+            base_apps = cls.ALLOWED_WINDOWS_APPS.copy()
         elif system == "Linux":
-            return cls.ALLOWED_LINUX_APPS
+            base_apps = cls.ALLOWED_LINUX_APPS.copy()
         elif system == "Darwin":
-            return cls.ALLOWED_MAC_APPS
-        return {}
+            base_apps = cls.ALLOWED_MAC_APPS.copy()
+        
+        # Merge discovered apps
+        base_apps.update(cls._discovered_apps)
+        return base_apps
     
     @classmethod
     def launch_app(cls, app_name: str) -> Dict[str, Any]:
@@ -96,7 +160,7 @@ class AppLauncher:
         Launch an application from the allowlist.
         
         Args:
-            app_name: Name of the app to launch (e.g., "notepad", "calc")
+            app_name: Name of the app to launch (e.g., "notepad", "calc", "bizmed")
             
         Returns:
             Result dictionary with success status
@@ -104,19 +168,34 @@ class AppLauncher:
         app_name_lower = app_name.lower().strip()
         allowed = cls.get_allowed_apps()
         
-        if app_name_lower not in allowed:
-            logger.warning(f"App '{app_name}' not in allowlist. Allowed: {list(allowed.keys())}")
+        # Try exact match first
+        command = allowed.get(app_name_lower)
+        
+        # If not found, try fuzzy matching (partial name)
+        if not command:
+            matches = [k for k in allowed.keys() if app_name_lower in k or k in app_name_lower]
+            if matches:
+                command = allowed[matches[0]]
+                logger.info(f"Fuzzy matched '{app_name}' to '{matches[0]}'")
+                app_name_lower = matches[0]
+        
+        if not command:
+            available = list(allowed.keys())[:20]  # Show first 20
+            logger.warning(f"App '{app_name}' not found. Available: {available}")
             return {
                 "action": "launch_app",
                 "success": False,
-                "error": f"App '{app_name}' not allowed. Allowed apps: {', '.join(allowed.keys())}",
+                "error": f"App '{app_name}' not found. Available apps include: {', '.join(available)}",
                 "app_name": app_name
             }
         
-        command = allowed[app_name_lower]
         try:
+            # Handle .lnk shortcuts on Windows
+            if platform.system() == "Windows" and command.endswith('.lnk'):
+                import os
+                os.startfile(command)
             # Split Mac commands into proper list format for security
-            if platform.system() == "Darwin" and isinstance(command, str):
+            elif platform.system() == "Darwin" and isinstance(command, str):
                 cmd_parts = command.split()
                 subprocess.Popen(cmd_parts)
             elif isinstance(command, str):
@@ -127,7 +206,7 @@ class AppLauncher:
             return {
                 "action": "launch_app",
                 "success": True,
-                "app_name": app_name,
+                "app_name": app_name_lower,
                 "command": command
             }
         except Exception as e:

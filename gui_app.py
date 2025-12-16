@@ -5,7 +5,6 @@ import sys
 import os
 from pathlib import Path
 from typing import List
-import ollama
 import httpx
 from loguru import logger
 from dotenv import load_dotenv
@@ -53,6 +52,8 @@ class DigitalHumainGUI:
         self.current_models = []
         self.cancel_event = None
         self.agent_thread = None
+        self.provider_health_status = "unknown"  # unknown, healthy, unhealthy
+        self.provider_health_message = ""
         
         # Initialize memory systems
         self.demo_memory = DemonstrationMemory()
@@ -60,37 +61,105 @@ class DigitalHumainGUI:
         self.memory_summarizer = MemorySummarizer()
         
         self.setup_ui()
+        self._detect_initial_provider()
         self.load_models()
 
     def _init_style(self):
-        # Dark futuristic palette
-        # Higher-contrast palette for better readability
-        bg = "#0b0d12"
-        panel = "#12192a"
-        accent = "#4dd0ff"
-        text = "#e9eef7"
-        subdued = "#a3b7d8"
+        # Modern, high-contrast professional palette
+        bg = "#1e1e2e"           # Darker slate background
+        panel = "#2d2d44"        # Medium slate for panels
+        input_bg = "#3a3a52"     # Lighter for input fields
+        accent = "#00d4ff"       # Bright cyan accent
+        accent_hover = "#00a8cc" # Darker cyan for hover
+        text = "#ffffff"         # Pure white for maximum contrast
+        text_muted = "#b8b8d0"   # Light gray for secondary text
+        border = "#4a4a66"       # Visible borders
 
         self.root.configure(bg=bg)
         style = ttk.Style()
         style.theme_use("clam")
 
+        # Frames
         style.configure("TFrame", background=bg)
-        style.configure("TLabelframe", background=panel, foreground=text, bordercolor=accent, relief="solid")
-        style.configure("TLabelframe.Label", background=panel, foreground=text, padding=4)
-        style.configure("TLabel", background=panel, foreground=text)
-        style.configure("TButton", background=panel, foreground=text, borderwidth=0, focusthickness=3, focuscolor=accent)
-        style.map("TButton", background=[("active", "#1f2538")])
-        style.configure("TCombobox", fieldbackground=panel, background=panel, foreground=text, arrowcolor=accent, selectbackground="#243047", selectforeground=text)
-        style.configure("TEntry", fieldbackground=panel, foreground=text, bordercolor=accent, lightcolor=panel, darkcolor=panel)
-        style.configure("Vertical.TScrollbar", gripcount=0, background=panel, darkcolor=panel, lightcolor=panel, troughcolor=bg, bordercolor=bg, arrowcolor=accent)
+        
+        # LabelFrames (sections)
+        style.configure("TLabelframe", 
+                       background=panel, 
+                       foreground=text, 
+                       bordercolor=border,
+                       borderwidth=2,
+                       relief="solid")
+        style.configure("TLabelframe.Label", 
+                       background=panel, 
+                       foreground=accent,
+                       font=("Segoe UI", 10, "bold"),
+                       padding=6)
+        
+        # Labels
+        style.configure("TLabel", 
+                       background=panel, 
+                       foreground=text,
+                       font=("Segoe UI", 9))
+        
+        # Buttons
+        style.configure("TButton", 
+                       background=accent, 
+                       foreground="#000000",
+                       borderwidth=0,
+                       focusthickness=0,
+                       font=("Segoe UI", 9, "bold"),
+                       padding=8)
+        style.map("TButton", 
+                 background=[("active", accent_hover), ("pressed", "#008fb3")],
+                 foreground=[("active", "#000000")])
+        
+        # Combobox
+        style.configure("TCombobox", 
+                       fieldbackground=input_bg,
+                       background=input_bg,
+                       foreground=text,
+                       arrowcolor=accent,
+                       borderwidth=1,
+                       relief="solid")
+        style.map("TCombobox",
+                 fieldbackground=[("readonly", input_bg)],
+                 selectbackground=[("readonly", accent)],
+                 selectforeground=[("readonly", "#000000")])
+        
+        # Entry
+        style.configure("TEntry", 
+                       fieldbackground=input_bg,
+                       foreground=text,
+                       bordercolor=border,
+                       borderwidth=1,
+                       relief="solid",
+                       insertcolor=accent)
+        
+        # Checkbutton
+        style.configure("TCheckbutton",
+                       background=panel,
+                       foreground=text,
+                       font=("Segoe UI", 9))
+        
+        # Scrollbar
+        style.configure("Vertical.TScrollbar", 
+                       gripcount=0,
+                       background=panel,
+                       darkcolor=panel,
+                       lightcolor=panel,
+                       troughcolor=bg,
+                       bordercolor=border,
+                       arrowcolor=accent)
 
         self.colors = {
             "bg": bg,
             "panel": panel,
+            "input_bg": input_bg,
             "accent": accent,
+            "accent_hover": accent_hover,
             "text": text,
-            "subdued": subdued,
+            "text_muted": text_muted,
+            "border": border,
         }
         
     def setup_ui(self):
@@ -106,11 +175,28 @@ class DigitalHumainGUI:
         model_frame.columnconfigure(1, weight=1)
         model_frame.columnconfigure(3, weight=1)
 
+        # Provider row with health indicator
+        provider_container = ttk.Frame(model_frame)
+        provider_container.grid(row=0, column=1, padx=5, pady=2, sticky="ew")
+        
         ttk.Label(model_frame, text="Provider:").grid(row=0, column=0, padx=5, pady=2, sticky="w")
+        
+        # Health status indicator (canvas for colored dot)
+        self.health_canvas = tk.Canvas(provider_container, width=12, height=12, bg=self.colors["panel"], highlightthickness=0)
+        self.health_canvas.pack(side=tk.LEFT, padx=(0, 5))
+        self.health_dot = self.health_canvas.create_oval(2, 2, 10, 10, fill="#666666", outline="")
+        
+        # Tooltip support
+        self.health_tooltip = None
+        self.health_canvas.bind("<Enter>", self._show_health_tooltip)
+        self.health_canvas.bind("<Leave>", self._hide_health_tooltip)
+        
+        # Provider selector
+        # Default to Ollama, but will auto-switch if unavailable
         self.provider_var = tk.StringVar(value="ollama")
-        self.provider_combo = ttk.Combobox(model_frame, textvariable=self.provider_var, state="readonly")
+        self.provider_combo = ttk.Combobox(provider_container, textvariable=self.provider_var, state="readonly", width=15)
         self.provider_combo['values'] = ["ollama", "openrouter", "letta"]
-        self.provider_combo.grid(row=0, column=1, padx=5, pady=2, sticky="ew")
+        self.provider_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.provider_combo.bind("<<ComboboxSelected>>", lambda _e: self.load_models())
 
         ttk.Label(model_frame, text="Model:").grid(row=0, column=2, padx=5, pady=2, sticky="w")
@@ -138,7 +224,18 @@ class DigitalHumainGUI:
         
         task_frame = ttk.LabelFrame(main_frame, text="Task", padding="8")
         task_frame.pack(fill=tk.X, pady=8)
-        self.task_text = tk.Text(task_frame, height=4, width=50, bg=self.colors["panel"], fg=self.colors["text"], insertbackground=self.colors["accent"], highlightthickness=0, relief="flat", wrap="word")
+        self.task_text = tk.Text(task_frame, height=4, width=50, 
+                                bg=self.colors["input_bg"], 
+                                fg=self.colors["text"], 
+                                insertbackground=self.colors["accent"],
+                                highlightthickness=1,
+                                highlightbackground=self.colors["border"],
+                                highlightcolor=self.colors["accent"],
+                                relief="solid",
+                                wrap="word",
+                                font=("Segoe UI", 10),
+                                padx=8,
+                                pady=6)
         self.task_text.pack(fill=tk.X, padx=5, pady=5)
         self.task_text.insert("1.0", "Go to notepad and write a letter to Steve Jobs in 10 words")
         
@@ -199,6 +296,13 @@ class DigitalHumainGUI:
                                orient=tk.HORIZONTAL, length=100)
         speed_scale.pack(side=tk.LEFT, padx=5)
         
+        # Visual overlay control
+        overlay_frame = ttk.Frame(memory_frame)
+        overlay_frame.pack(side=tk.LEFT, padx=10)
+        
+        self.overlay_enabled = tk.BooleanVar(value=True)
+        ttk.Checkbutton(overlay_frame, text="Visual Indicators", variable=self.overlay_enabled).pack(side=tk.LEFT, padx=5)
+        
         self.safety_pause_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(mem_settings_frame, text="Safety Pause", variable=self.safety_pause_var).pack(side=tk.LEFT, padx=5)
         
@@ -209,7 +313,18 @@ class DigitalHumainGUI:
         log_frame = ttk.LabelFrame(main_frame, text="Execution Logs", padding="5")
         log_frame.pack(fill=tk.BOTH, expand=True, pady=8)
         
-        self.log_area = scrolledtext.ScrolledText(log_frame, state='disabled', height=20, bg=self.colors["panel"], fg=self.colors["text"], insertbackground=self.colors["accent"], highlightthickness=0, relief="flat")
+        self.log_area = scrolledtext.ScrolledText(log_frame, 
+                                                  state='disabled', 
+                                                  height=20,
+                                                  bg=self.colors["bg"],
+                                                  fg=self.colors["text"],
+                                                  insertbackground=self.colors["accent"],
+                                                  highlightthickness=1,
+                                                  highlightbackground=self.colors["border"],
+                                                  relief="solid",
+                                                  font=("Consolas", 9),
+                                                  padx=8,
+                                                  pady=6)
         self.log_area.pack(fill=tk.BOTH, expand=True)
         
         # Redirect logger
@@ -226,17 +341,27 @@ class DigitalHumainGUI:
             self._load_letta_models()
 
     def _load_ollama_models(self):
+        """Load models from a local Ollama server if available; otherwise fall back."""
         try:
-            response = ollama.list()
-            if hasattr(response, 'models'):
-                model_names = [m.model for m in response.models]
-            else:
-                model_names = [m['model'] for m in response['models']]
+            # Use our HTTP-based provider (no python 'ollama' dependency)
+            provider = OllamaProvider()
+            models_meta = provider.list_models()
+            model_names = []
+            for m in models_meta:
+                # Accept common keys from Ollama /api/tags
+                name = m.get("name") or m.get("model") or m.get("id")
+                if name:
+                    model_names.append(name)
+            if not model_names:
+                raise RuntimeError("No models found or Ollama not reachable")
             self.current_models = model_names
             self.apply_filter()
+            self._update_health_indicator("healthy", "Ollama: Connected")
         except Exception as e:
-            logger.error(f"Failed to load Ollama models: {e}")
-            self.model_combo['values'] = ["Error loading models"]
+            logger.warning(f"Ollama unavailable: {e}. Switching to OpenRouter fallback.")
+            self._update_health_indicator("unhealthy", f"Ollama: {str(e)[:50]}")
+            self.provider_var.set("openrouter")
+            self._load_openrouter_models()
 
     def _load_openrouter_models(self):
         config = load_config()
@@ -264,9 +389,12 @@ class DigitalHumainGUI:
                 if models:
                     self.current_models = models
                     self.apply_filter()
+                    self._update_health_indicator("healthy", "OpenRouter: Connected")
                     return
         except Exception as e:
             logger.warning(f"OpenRouter model fetch failed, using fallback list: {e}")
+            self._update_health_indicator("unhealthy" if not api_key else "healthy", 
+                                         "OpenRouter: No API key" if not api_key else "OpenRouter: Using fallback")
 
         self.current_models = fallback_models
         self.apply_filter()
@@ -286,6 +414,13 @@ class DigitalHumainGUI:
             self.current_models.remove(default_model)
             self.current_models.insert(0, default_model)
         self.apply_filter()
+        
+        # Check if API key is set
+        api_key = self.api_key_var.get().strip() or os.environ.get("LETTA_API_KEY", "")
+        if api_key:
+            self._update_health_indicator("healthy", "Letta: API key configured")
+        else:
+            self._update_health_indicator("unhealthy", "Letta: No API key")
 
     def apply_filter(self):
         models = getattr(self, "current_models", [])
@@ -305,6 +440,72 @@ class DigitalHumainGUI:
         self.model_combo['values'] = filtered
         if filtered:
             self.model_combo.set(filtered[0])
+
+    def _detect_initial_provider(self):
+        """Detect which provider is available on startup and set as default."""
+        try:
+            # Try Ollama first
+            provider = OllamaProvider()
+            models = provider.list_models()
+            if models:
+                logger.info("Ollama detected and set as default provider")
+                self.provider_var.set("ollama")
+                return
+        except Exception as e:
+            logger.debug(f"Ollama not available: {e}")
+        
+        # Fall back to OpenRouter if API key is present
+        api_key = os.environ.get("OPENROUTER_API_KEY", "")
+        if api_key:
+            logger.info("OpenRouter API key found - setting as default provider")
+            self.provider_var.set("openrouter")
+        else:
+            logger.warning("No providers available. Please install Ollama or set OPENROUTER_API_KEY")
+            # Keep ollama as default, will show error when loading models
+
+    def _update_health_indicator(self, status: str, message: str):
+        """Update the health indicator dot color and tooltip."""
+        self.provider_health_status = status
+        self.provider_health_message = message
+        
+        # Color mapping
+        colors = {
+            "healthy": "#50fa7b",    # Green
+            "unhealthy": "#ff5555",  # Red
+            "unknown": "#666666"     # Gray
+        }
+        
+        color = colors.get(status, colors["unknown"])
+        self.health_canvas.itemconfig(self.health_dot, fill=color)
+        logger.debug(f"Provider health: {status} - {message}")
+
+    def _show_health_tooltip(self, event):
+        """Show tooltip with health status."""
+        x, y, _, _ = self.health_canvas.bbox("all")
+        x += self.health_canvas.winfo_rootx() + 15
+        y += self.health_canvas.winfo_rooty() + 15
+        
+        self.health_tooltip = tk.Toplevel(self.root)
+        self.health_tooltip.wm_overrideredirect(True)
+        self.health_tooltip.wm_geometry(f"+{x}+{y}")
+        
+        label = tk.Label(
+            self.health_tooltip,
+            text=self.provider_health_message or "Status unknown",
+            background="#282a36",
+            foreground="#f8f8f2",
+            relief="solid",
+            borderwidth=1,
+            padx=5,
+            pady=3
+        )
+        label.pack()
+
+    def _hide_health_tooltip(self, event):
+        """Hide the tooltip."""
+        if self.health_tooltip:
+            self.health_tooltip.destroy()
+            self.health_tooltip = None
 
     def clear_logs(self):
         self.log_area.configure(state='normal')
@@ -351,7 +552,7 @@ class DigitalHumainGUI:
                 screenshot_dir="./screenshots"
             )
             
-            gui_actions = GUIActions(pause=1.0)  # Slower for safety
+            gui_actions = GUIActions(pause=1.0, show_overlay=self.overlay_enabled.get())  # Slower for safety
             
             tool_registry = ToolRegistry()
             tool_registry.register(FileReadTool())
@@ -445,12 +646,38 @@ class DigitalHumainGUI:
                 model=model,
             )
 
-        # Default to Ollama
-        return OllamaProvider(
-            model=model,
-            base_url=config.get("llm", {}).get("base_url", "http://localhost:11434"),
-            timeout=config.get("llm", {}).get("timeout", 300)
-        )
+        # Ollama (default local). If not reachable, try OpenRouter fallback.
+        try:
+            ol = OllamaProvider(
+                model=model,
+                base_url=config.get("llm", {}).get("base_url", "http://localhost:11434"),
+                timeout=config.get("llm", {}).get("timeout", 300)
+            )
+            # Health check: list models
+            if not ol.list_models():
+                raise RuntimeError("Ollama not reachable or no models available")
+            return ol
+        except Exception as e:
+            logger.warning(f"Ollama not available: {e}")
+            # Attempt OpenRouter fallback if API key is present
+            or_cfg = config.get("llm", {}).get("openrouter", {})
+            api_key = self.api_key_var.get().strip() or os.environ.get("OPENROUTER_API_KEY", "")
+            if api_key:
+                logger.info("Falling back to OpenRouter provider")
+                self.provider_var.set("openrouter")
+                return OpenRouterProvider(
+                    model=model or or_cfg.get("default_model", "openrouter/nvidia/nemotron-nano-12b-v2-vl:free"),
+                    api_key=api_key,
+                    base_url=or_cfg.get("base_url", "https://openrouter.ai/api/v1"),
+                    timeout=or_cfg.get("timeout", 120),
+                    referer=or_cfg.get("referer"),
+                    site_url=or_cfg.get("site_url"),
+                )
+            # No fallback available
+            raise RuntimeError(
+                "Ollama is not available and no OpenRouter API key was provided. "
+                "Please either install/run Ollama (https://ollama.ai) or set OPENROUTER_API_KEY to use cloud models."
+            )
 
     def _set_env_api_key(self):
         key = self.api_key_var.get().strip()
