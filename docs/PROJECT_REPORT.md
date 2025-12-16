@@ -80,9 +80,9 @@ digital-humain/
 ├── dist/                            # Built executables
 │   └── DigitalHumain.exe            # Standalone Windows app (170 MB)
 ├── build/                           # PyInstaller build artifacts
-├── gui_app.py                       # Tkinter GUI application
-├── web_app.py                       # Streamlit web UI (optional)
-├── build_exe.py                     # PyInstaller build script
+├── gui_main.py                      # Tkinter GUI application (standard)
+├── gui_letta.py                     # Tkinter GUI application (Letta-style)
+├── scripts/build_exe.py             # PyInstaller build script
 ├── requirements.txt                 # Python dependencies
 ├── setup.py                         # Package setup
 ├── .env                             # Environment variables (API keys)
@@ -468,7 +468,7 @@ class AgentCoordinator:
 
 ## 4. GUI Implementation
 
-### 4.1 Tkinter Application (gui_app.py)
+### 4.1 Tkinter Application (gui_main.py)
 
 **Architecture**:
 ```
@@ -541,15 +541,15 @@ def _reset_controls(self):
 **PyInstaller Configuration** (build_exe.py):
 ```python
 args = [
-    'gui_app.py',
+    str(root / 'gui_main.py'),
     '--name=DigitalHumain',
     '--onefile',              # Single .exe
     '--windowed',             # No console window
     '--clean',
     
     # Bundle data files
-    f'--add-data=config/config.yaml{sep}config',
-    f'--add-data=digital_humain{sep}digital_humain',
+    f'--add-data={root / "config" / "config.yaml"}{sep}config',
+    f'--add-data={root / "digital_humain"}{sep}digital_humain',
     
     # Hidden imports (not auto-detected)
     '--hidden-import=digital_humain.core',

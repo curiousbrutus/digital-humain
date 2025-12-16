@@ -303,6 +303,6 @@ The desktop app discovery feature successfully enables the agent to find and lau
 ## Related Work
 
 - **Visual Overlay** (docs/VISUAL_OVERLAY.md): Shows what agent is doing
-- **Optional Ollama** (gui_app.py): Provider flexibility with health indicators
+- **Optional Ollama** (gui_main.py): Provider flexibility with health indicators
 - **Action Parser** (action_parser.py): Intent extraction from reasoning
 - **GUI Actions** (vlm/actions.py): Mouse/keyboard automation

@@ -379,6 +379,32 @@ class ActionParser:
                 )
         
         return None
+
+    @classmethod
+    def parse_hotkey(cls, reasoning: str) -> Optional[ActionIntent]:
+        """Parse common hotkey patterns like Ctrl+S, Ctrl+C, etc."""
+        reasoning_lower = reasoning.lower()
+
+        # Patterns like: ctrl+s, ctrl + s, control+s, press ctrl s
+        combo_match = re.search(
+            r'\b(?:ctrl|control|cmd|command|alt|shift)\s*(?:\+|\s)\s*([a-z0-9])\b',
+            reasoning_lower,
+        )
+        if combo_match:
+            modifier = re.search(r'\b(ctrl|control|cmd|command|alt|shift)\b', reasoning_lower)
+            if modifier:
+                mod = cls.KEY_MAPPINGS.get(modifier.group(1), modifier.group(1))
+                key = combo_match.group(1)
+                # Normalize common synonyms
+                mod = "ctrl" if mod in {"control", "ctrl"} else mod
+                mod = "command" if mod in {"cmd", "command"} else mod
+                return ActionIntent(
+                    action_type="hotkey",
+                    confidence=0.9,
+                    params={"keys": [mod, key]},
+                    reason=f"Extracted hotkey: {mod}+{key}",
+                )
+        return None
     
     @classmethod
     def parse_app_launch(cls, reasoning: str) -> Optional[ActionIntent]:
@@ -479,16 +505,22 @@ class ActionParser:
         
         reasoning_lower = reasoning.lower()
         
-        # Check for task completion indicators - must be ACTUAL completion, not intent
-        # Avoid false positives like "to complete the task" (future intent)
+        # Check for task completion indicators.
+        # Keep this STRICT: only treat explicit completion statements as completion.
+        # (Otherwise we end runs early after partial actions like typing.)
         completion_phrases = [
-            "task is complete", "task is done", "task complete", "task done",
-            "completed the task", "finished the task", "accomplished the task",
-            "the letter has been written", "the letter has been typed",
-            "successfully written", "successfully typed", "successfully completed",
-            "i have finished", "i have completed", "have been written",
-            "task is now complete", "task is now done",
-            "this completes the task", "that completes the task"
+            "task complete",
+            "task done",
+            "task is complete",
+            "task is done",
+            "task is now complete",
+            "task is now done",
+            "this completes the task",
+            "that completes the task",
+            "i have completed the task",
+            "i have finished the task",
+            "completed the task",
+            "finished the task",
         ]
         # These phrases indicate the task is NOT yet complete
         future_intent_phrases = ["to complete the task", "to complete this", "in order to complete", "should be", "will be", "next step"]
@@ -600,6 +632,11 @@ class ActionParser:
         if app_intent:
             return app_intent
         
+        # Try to parse hotkey (ctrl+s, etc.)
+        hotkey_intent = cls.parse_hotkey(reasoning)
+        if hotkey_intent:
+            return hotkey_intent
+
         # Try to parse key press
         key_intent = cls.parse_key_press(reasoning)
         if key_intent:

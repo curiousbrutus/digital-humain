@@ -2,9 +2,9 @@
 
 ## Quick Reference
 
-| Feature | Standard GUI (`gui_app.py`) | Letta-Style GUI (`gui_app_letta.py`) |
+| Feature | Standard GUI (`gui_main.py`) | Letta-Style GUI (`gui_letta.py`) |
 |---------|----------------------------|-------------------------------------|
-| **Launch Command** | `python gui_app.py` | `python gui_app_letta.py` |
+| **Launch Command** | `python gui_main.py` | `python gui_letta.py` |
 | **Window Size** | 1200x850 | 1400x900 |
 | **Layout** | Single column | Three-panel professional |
 | **Memory System** | Episodic + Demo recording | Core + Archival + Episodic + Demo |

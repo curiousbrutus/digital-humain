@@ -17,7 +17,7 @@ letta server
 
 Letta (formerly MemGPT) is a production-grade memory-augmented LLM framework built on these core concepts:
 
-### 1. **Core Memory System** ✅ (We've implemented this in gui_app_letta.py)
+### 1. **Core Memory System** ✅ (Implemented in gui_letta.py)
 ```
 Letta Memory Hierarchy:
 ├── Human Block (User context)
@@ -27,7 +27,7 @@ Letta Memory Hierarchy:
 └── Tools (Function execution)
 ```
 
-**Our Implementation**: ✅ CoreMemory + ArchivalMemory in gui_app_letta.py
+**Our Implementation**: ✅ CoreMemory + ArchivalMemory in gui_letta.py
 - **CoreMemory**: Human + Persona (2000 chars each) ✅
 - **ArchivalMemory**: JSON-persisted long-term storage ✅
 - **ConversationMessage**: Timestamped with reasoning ✅
@@ -76,7 +76,7 @@ Letta supports:
 - **Shared memory**: Agent-to-agent access
 - **Orchestration**: LangGraph-like state management
 
-**Our Potential**: Multi-agent workspace in gui_app_letta.py
+**Our Potential**: Multi-agent workspace in gui_letta.py
 ```python
 # Future: Add agent workspace
 class AgentWorkspace:
@@ -123,7 +123,7 @@ class MemoryCompactor:
         pass
 ```
 
-**Action**: Add to gui_app_letta.py
+**Action**: Add to gui_letta.py
 - Summarize archival memory when > 10,000 tokens
 - Auto-trigger before reaching token limit
 
@@ -162,7 +162,7 @@ Your memories:
 - Recent: {recent_messages}
 ```
 
-**Our Approach**: System instructions in gui_app_letta.py ✅
+**Our Approach**: System instructions in gui_letta.py ✅
 
 ### D. Error Recovery & Validation
 Letta's robust error handling:
@@ -192,7 +192,7 @@ Letta patterns:
 
 #### 1. Add Exact Token Counting
 ```python
-# Add to gui_app_letta.py
+# Add to gui_letta.py
 import tiktoken
 
 class TokenCounter:

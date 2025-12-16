@@ -37,7 +37,7 @@ def build():
     """Build the executable using PyInstaller."""
     
     # Get project root
-    root = Path(__file__).parent
+    root = Path(__file__).resolve().parent.parent
     
     # Get platform-specific settings
     plat = get_platform_info()
@@ -46,7 +46,7 @@ def build():
     
     # PyInstaller arguments
     args = [
-        'gui_app.py',  # Main script
+        str(root / 'gui_main.py'),  # Main script
         '--name=DigitalHumain',
         '--onefile',  # Single exe file
         '--windowed',  # No console window

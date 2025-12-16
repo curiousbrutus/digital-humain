@@ -3,6 +3,7 @@
 Use this index to navigate all project documents. Paths assume repository root.
 
 ## Core Docs
+- [docs/START_HERE.md](START_HERE.md) — Canonical overview (what/why/how; kept consistent)
 - [docs/PROJECT_REPORT.md](PROJECT_REPORT.md) — Comprehensive technical report (architecture, roadmap, use cases)
 - [docs/ARCHITECTURE.md](ARCHITECTURE.md) — High-level design and components
 - [docs/IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) — Implementation notes and decisions
@@ -15,11 +16,10 @@ Use this index to navigate all project documents. Paths assume repository root.
 - [docs/APP_DISCOVERY.md](APP_DISCOVERY.md) — Desktop application auto-discovery and launching
 - [docs/APP_DISCOVERY_IMPLEMENTATION.md](APP_DISCOVERY_IMPLEMENTATION.md) — App discovery technical details
 - [docs/IMPROVEMENTS_SUMMARY.md](IMPROVEMENTS_SUMMARY.md) — Improvements log
-- [docs/FINAL_SUMMARY.md](FINAL_SUMMARY.md) — Milestone wrap-up
 - [docs/PR_SUMMARY.md](PR_SUMMARY.md) — Pull request summaries
+- [docs/SECURITY.md](SECURITY.md) — Security guidance (sandboxing, prompt injection defense, auditing)
 
 ## Research & Recommendations
-- [docs/co-expert-recommendations.md](co-expert-recommendations.md) — Expert recommendations for production hardening
 - [docs/prompts.md](prompts.md) — Prompt pack for deep research and expert reviews
 
 ## Getting Started

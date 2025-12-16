@@ -258,6 +258,10 @@ class LettaStyleGUI:
         self.token_count = 0
         self.max_tokens = 8192
         self.token_encoder = self._init_token_encoder()
+
+        # Model filtering controls (OpenRouter and others)
+        self.filter_var = tk.StringVar()
+        self.free_only = tk.BooleanVar(value=False)
         
         self._init_style()
         self.setup_ui()
@@ -441,6 +445,27 @@ class LettaStyleGUI:
         model_combo = ttk.Combobox(llm_frame, textvariable=self.model_var, state="readonly")
         model_combo.pack(fill=tk.X, pady=2)
         self.model_combo = model_combo
+
+        # Filter + Free-only (to match gui_main UX)
+        ttk.Label(llm_frame, text="Filter:").pack(anchor="w", pady=(6, 2))
+        filter_entry = ttk.Entry(llm_frame, textvariable=self.filter_var)
+        filter_entry.pack(fill=tk.X, pady=2)
+        filter_entry.bind("<KeyRelease>", lambda _e: self.apply_filter())
+
+        free_row = ttk.Frame(llm_frame)
+        free_row.pack(fill=tk.X, pady=2)
+        ttk.Checkbutton(
+            free_row,
+            text="Free only",
+            variable=self.free_only,
+            command=self.apply_filter,
+        ).pack(side=tk.LEFT)
+        ttk.Button(
+            free_row,
+            text="Apply",
+            command=self.apply_filter,
+            width=8,
+        ).pack(side=tk.RIGHT)
         
         # API Key
         ttk.Label(llm_frame, text="API Key:").pack(anchor="w", pady=(5, 2))
@@ -1065,11 +1090,32 @@ class LettaStyleGUI:
                                      "Letta: " + ("Configured" if api_key else "No API key"))
     
     def apply_filter(self):
-        models = getattr(self, "current_models", [])
-        if models:
-            self.model_combo['values'] = models
-            self.model_combo.set(models[0])
-            self._refresh_token_encoder(self.model_var.get())
+        models = list(getattr(self, "current_models", []) or [])
+        query = (self.filter_var.get() or "").lower().strip()
+        free_only = bool(self.free_only.get())
+
+        filtered: List[str] = []
+        for m in models:
+            m_str = str(m)
+            if query and query not in m_str.lower():
+                continue
+            if free_only and ":free" not in m_str.lower():
+                continue
+            filtered.append(m_str)
+
+        if not filtered:
+            # Don't clobber the current selection if filter yields nothing
+            self.model_combo['values'] = []
+            return
+
+        current = self.model_var.get()
+        self.model_combo['values'] = filtered
+        if current in filtered:
+            self.model_combo.set(current)
+        else:
+            self.model_combo.set(filtered[0])
+
+        self._refresh_token_encoder(self.model_var.get())
     
     def _detect_initial_provider(self):
         try:

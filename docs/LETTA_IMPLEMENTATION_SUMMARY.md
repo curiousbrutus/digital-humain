@@ -7,7 +7,7 @@ Successfully implemented a professional Letta-inspired GUI for Digital Humain wi
 ## What Was Built
 
 ### 1. Core Memory System
-**File**: `gui_app_letta.py` - `CoreMemory` class (lines 85-150)
+**File**: `gui_letta.py` - `CoreMemory` class
 
 **Features:**
 - **Human Block**: 2000-character context about the user
@@ -31,7 +31,7 @@ prompt = core_memory.to_prompt()  # For LLM context
 ```
 
 ### 2. Archival Memory System
-**File**: `gui_app_letta.py` - `ArchivalMemory` class (lines 153-195)
+**File**: `gui_letta.py` - `ArchivalMemory` class
 
 **Features:**
 - **Long-term Storage**: Unlimited capacity JSON storage
@@ -51,7 +51,7 @@ prompt = core_memory.to_prompt()  # For LLM context
 ```
 
 ### 3. Conversation Management
-**File**: `gui_app_letta.py` - `ConversationMessage` class (lines 198-212)
+**File**: `gui_letta.py` - `ConversationMessage` class
 
 **Features:**
 - **Rich Display**: Color-coded user/agent messages
@@ -161,8 +161,8 @@ _update_token_display()  # Updates label and bar
 
 ```
 digital-humain/
-├── gui_app_letta.py           # NEW: Letta-style GUI (1113 lines)
-├── gui_app.py                 # Original GUI (803 lines)
+├── gui_letta.py               # Letta-style GUI
+├── gui_main.py                # Standard GUI
 ├── test_letta_gui.py          # NEW: Test script
 ├── docs/
 │   ├── LETTA_GUI.md          # NEW: Complete documentation
@@ -178,7 +178,7 @@ digital-humain/
 
 ## Key Statistics
 
-- **Lines of Code**: 1,113 lines (gui_app_letta.py)
+- **Lines of Code**: see `gui_letta.py`
 - **New Classes**: 3 (CoreMemory, ArchivalMemory, ConversationMessage)
 - **Memory Blocks**: 2 (Human, Persona)
 - **Character Limit**: 2,000 per block
@@ -208,7 +208,7 @@ digital-humain/
 
 ### Launch Command
 ```bash
-python gui_app_letta.py
+python gui_letta.py
 ```
 
 ### Initial Setup
@@ -302,7 +302,7 @@ python gui_app_letta.py
 - Episodic memory
 - Visual overlay
 
-**No Breaking Changes**: Standard GUI (`gui_app.py`) still works independently.
+**No Breaking Changes**: Standard GUI (`gui_main.py`) still works independently.
 
 ## Performance
 

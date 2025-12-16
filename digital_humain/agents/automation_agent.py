@@ -9,7 +9,7 @@ from digital_humain.core.llm import LLMProvider
 from digital_humain.vlm.screen_analyzer import ScreenAnalyzer
 from digital_humain.vlm.actions import GUIActions
 from digital_humain.tools.base import ToolRegistry
-from digital_humain.agents.action_parser import ActionParser, AppLauncher
+from digital_humain.agents.action_parser import ActionParser, AppLauncher, ActionIntent
 
 
 class DesktopAutomationAgent(BaseAgent):
@@ -66,7 +66,15 @@ class DesktopAutomationAgent(BaseAgent):
         elif "launch_app" in history and "type_text" not in history:
             next_step_hint = "The app is now open. You should proceed to type the required content."
         elif "type_text" in history:
-            next_step_hint = "Text has been typed. Check if the task is complete."
+            # If the task includes saving/exporting, do not stop after typing.
+            task_lower = (state.get('task') or "").lower()
+            if any(k in task_lower for k in ["save", "export", "download"]):
+                next_step_hint = (
+                    "Text has been typed. If the task requires saving/exporting, perform that next "
+                    "(e.g., use Ctrl+S / Save As and choose the requested location), then only mark task complete."
+                )
+            else:
+                next_step_hint = "Text has been typed. If all requirements are satisfied, mark task complete."
         
         prompt = f"""Current Task: {state['task']}
 
@@ -196,14 +204,21 @@ Reasoning:"""
                         logger.info(f"[Auto-advance] Model returned empty, auto-typing based on task")
                         intent = typing_intent
                 
-                # If we already typed and model is silent, mark complete
+                # If we already typed and model is silent, DO NOT auto-complete.
+                # Many tasks include additional steps (save/export, navigation, verification).
                 elif last_action_type == 'type_text' and last_action.get('success'):
-                    logger.info(f"[Auto-advance] Text typed, marking task complete")
-                    return {
-                        "action": "task_complete",
-                        "success": True,
-                        "result": "Task auto-completed after successful typing"
-                    }
+                    task_lower = (task or "").lower()
+                    if any(k in task_lower for k in ["save", "export", "download"]):
+                        # Nudge progress with a safe, common shortcut.
+                        logger.info("[Auto-advance] Text typed and task implies saving; sending Ctrl+S")
+                        intent = ActionIntent(
+                            action_type="hotkey",
+                            confidence=0.7,
+                            params={"keys": ["ctrl", "s"]},
+                            reason="Heuristic: task contains save/export/download",
+                        )
+                    else:
+                        logger.info("[Auto-advance] Model silent after typing; continuing with screen analysis")
             
             # If still no_action, do screen analysis (but limit consecutive analyses)
             if intent.action_type == "no_action":
@@ -238,6 +253,25 @@ Reasoning:"""
                 "action": "task_complete",
                 "success": True,
                 "result": "Task marked as complete by agent"
+            }
+
+        # Hotkey (e.g., ctrl+s)
+        if intent.action_type == "hotkey":
+            keys = intent.params.get("keys") or []
+            if not isinstance(keys, list) or len(keys) < 2:
+                return {
+                    "action": "hotkey",
+                    "success": False,
+                    "error": "Invalid hotkey keys",
+                    "keys": keys,
+                }
+            result = self.actions.hotkey(*keys)
+            logger.info(f"[Hotkey] {'+'.join(keys)} -> Success: {result.get('success', False)}")
+            return {
+                "action": "hotkey",
+                "success": result.get("success", False),
+                "result": result,
+                "keys": keys,
             }
         
         # Launch app
@@ -335,11 +369,10 @@ Reasoning:"""
         Returns:
             True if task is complete
         """
-        # Check if reasoning indicates completion
-        if state['reasoning']:
-            last_reasoning = state['reasoning'][-1].lower()
-            if any(word in last_reasoning for word in ["complete", "done", "finish", "success"]):
-                return True
+        # Only end when the agent explicitly issues a completion action.
+        # (This avoids false positives like "successfully typed".)
+        if action_result.get("action") == "task_complete" and action_result.get("success"):
+            return True
         
         # Check max steps
         if state['current_step'] >= state['max_steps'] - 1:

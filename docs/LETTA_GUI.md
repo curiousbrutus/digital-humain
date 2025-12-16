@@ -141,7 +141,7 @@ results = archival_memory.search("patient data")
 ### Starting the Application
 
 ```bash
-python gui_app_letta.py
+python gui_letta.py
 ```
 
 ### Initial Setup
@@ -341,7 +341,7 @@ Click 🎤 button to use speech-to-text for message input (requires `speech_reco
 
 ## Related Documentation
 
-- [Original GUI](../gui_app.py)
+- [Standard GUI](../gui_main.py)
 - [Core Memory Implementation](../digital_humain/memory/)
 - [Agent Architecture](ARCHITECTURE.md)
 - [Visual Overlay](VISUAL_OVERLAY.md)

@@ -46,7 +46,23 @@ htmlcov/
 
 # Logs
 *.log
-logs/
+
+# Runtime Data (CRITICAL - Never commit)
+/data/
+/data/logs/
+/data/screenshots/
+/data/models/
+/data/demonstrations/
+/data/episodic_memory/
+
+# Environment
+.env
+.env.local
+
+# Build Outputs (regeneratable)
+build/
+dist/
+*.spec
 
 # Local configuration
 .env

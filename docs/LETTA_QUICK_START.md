@@ -15,7 +15,7 @@ echo OPENROUTER_API_KEY=sk-or-v1-xxxxx > .env
 
 ### 3. Launch GUI
 ```bash
-python gui_app_letta.py
+python gui_letta.py
 ```
 
 The window should open with three panels:
@@ -173,10 +173,10 @@ Watch the token counter at the top of right panel:
 pip install tkinter  # May need system package on Linux
 
 # Check logs
-python gui_app_letta.py 2>&1 | tee launch.log
+python gui_letta.py 2>&1 | tee launch.log
 
 # Fallback to standard GUI
-python gui_app.py
+python gui_main.py
 ```
 
 ## Example Workflows

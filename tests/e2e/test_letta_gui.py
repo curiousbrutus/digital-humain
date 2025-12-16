@@ -5,8 +5,8 @@ Quick test to verify Letta-style GUI launches correctly.
 import sys
 from pathlib import Path
 
-# Add parent to path
-sys.path.insert(0, str(Path(__file__).parent))
+repo_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(repo_root))
 
 print("=" * 60)
 print("Testing Letta-Style GUI Components")
@@ -27,8 +27,8 @@ except Exception as e:
 print("\n2. Testing CoreMemory class...")
 try:
     import tkinter as tk
-    # Simulate import from gui_app_letta
-    exec(open("gui_app_letta.py", encoding="utf-8").read(), {"__name__": "__test__"})
+    # Simulate import from gui_letta.py
+    exec((repo_root / "gui_letta.py").read_text(encoding="utf-8"), {"__name__": "__test__"})
     print("✓ GUI file loads successfully")
 except Exception as e:
     print(f"✗ GUI load failed: {e}")
@@ -55,7 +55,7 @@ except Exception as e:
 
 print("\n4. Testing GUI launch...")
 print("⚠ Manual test required:")
-print("   Run: python gui_app_letta.py")
+print("   Run: python gui_letta.py")
 print("   Expected:")
 print("   - Window opens with three panels")
 print("   - Left panel shows LLM config")
@@ -66,5 +66,5 @@ print("   - Archival Memory tab visible")
 
 print("\n" + "=" * 60)
 print("Component tests complete!")
-print("Launch GUI manually: python gui_app_letta.py")
+print("Launch GUI manually: python gui_letta.py")
 print("=" * 60)

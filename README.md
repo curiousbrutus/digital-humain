@@ -329,7 +329,7 @@ python examples/memory_demo.py
 Professional interface with advanced memory management inspired by Letta:
 
 ```bash
-python gui_app_letta.py
+python gui_letta.py
 ```
 
 **Key Features:**
@@ -348,7 +348,7 @@ See [docs/LETTA_GUI.md](docs/LETTA_GUI.md) for complete documentation.
 Original feature-complete interface:
 
 ```bash
-python gui_app.py
+python gui_main.py
 ```
 
 The GUI includes:
@@ -376,7 +376,7 @@ Create a standalone executable for distribution:
 pip install pyinstaller
 
 # Build the executable
-python build_exe.py
+python scripts/build_exe.py
 ```
 
 **Output by platform:**
