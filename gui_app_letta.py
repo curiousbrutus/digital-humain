@@ -111,12 +111,52 @@ I have access to desktop automation tools and can learn from demonstrations."""
 
 
 class ArchivalMemory:
-    """Letta-style archival memory for long-term storage."""
+    """Letta-style archival memory for long-term storage with compaction."""
     
-    def __init__(self, storage_path: Optional[Path] = None):
+    def __init__(self, storage_path: Optional[Path] = None, max_tokens: int = 10000):
         self.storage_path = storage_path or Path("memory/archival")
         self.storage_path.mkdir(parents=True, exist_ok=True)
+        self.max_tokens = max_tokens
+        self.token_encoder = self._init_token_encoder()
         self.memories: List[Dict] = self._load_memories()
+    
+    def _init_token_encoder(self, model_name: str = "gpt-4"):
+        """Initialize token encoder; fall back to None if unavailable."""
+        if tiktoken is None:
+            return None
+        try:
+            return tiktoken.encoding_for_model(model_name)
+        except Exception:
+            try:
+                return tiktoken.get_encoding("cl100k_base")
+            except Exception:
+                return None
+    
+    def _count_tokens(self, text: str) -> int:
+        if not text:
+            return 0
+        if self.token_encoder:
+            try:
+                return len(self.token_encoder.encode(text))
+            except Exception:
+                pass
+        return int(len(text.split()) * 1.3)
+    
+    def total_tokens(self) -> int:
+        return sum(self._count_tokens(m.get("content", "")) for m in self.memories)
+    
+    def _enforce_limit(self):
+        """Compact by dropping oldest memories when over token budget."""
+        if not self.memories:
+            return
+        total = self.total_tokens()
+        pruned = 0
+        while total > self.max_tokens and self.memories:
+            removed = self.memories.pop(0)
+            total -= self._count_tokens(removed.get("content", ""))
+            pruned += 1
+        if pruned:
+            logger.info(f"Archival compacted: removed {pruned} entries to stay under {self.max_tokens} tokens")
     
     def _load_memories(self) -> List[Dict]:
         archive_file = self.storage_path / "archival.json"
@@ -139,6 +179,7 @@ class ArchivalMemory:
             "metadata": metadata or {}
         }
         self.memories.append(memory)
+        self._enforce_limit()
         self._save_memories()
     
     def search(self, query: str, limit: int = 5) -> List[Dict]:
@@ -437,7 +478,12 @@ class LettaStyleGUI:
                                     wrap="word",
                                     font=("Segoe UI", 9))
         self.sys_inst_text.pack(fill=tk.BOTH, expand=True)
-        self.sys_inst_text.insert("1.0", "Act as a desktop automation agent. Help users automate tasks using vision and reasoning.")
+        self.sys_inst_text.insert(
+            "1.0",
+            "You are a desktop automation agent with memory. Use tools strategically. "
+            "Always ground responses in Core Memory (human + persona) and recent messages. "
+            "When needed, search Archival Memory for supporting facts. Keep plans concise and safe."
+        )
         
         ttk.Button(sys_frame, text="Configure", command=self._configure_system).pack(pady=5)
         
