@@ -54,7 +54,7 @@ Successfully implemented comprehensive memory and learning-from-user features fo
 - Summary cadence configuration
 - Compressed history generation
 
-### 3. GUI Enhancements (`gui_app.py`)
+### 3. GUI Enhancements (`gui_main.py`)
 
 **New Controls Added:**
 
@@ -331,7 +331,7 @@ tests/unit/test_memory.py::TestEpisodicMemory::test_persist_and_reload PASSED [1
 6. `examples/memory_demo.py` - Working examples
 
 ### Modified Files (3):
-1. `gui_app.py` - Added memory controls (+150 lines)
+1. `gui_main.py` - Added memory controls
 2. `requirements.txt` - Added pynput, pygetwindow
 3. `README.md` - Updated features and architecture
 4. `.gitignore` - Exclude generated data directories

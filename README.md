@@ -15,6 +15,8 @@ A self-hosted Python-based agentic AI framework for enterprise desktop automatio
 - 🎬 **Learn from User**: Record and replay user demonstrations for macro automation
 - 🧩 **Episodic Memory**: Store and retrieve past experiences for enhanced decision making
 - 📝 **Memory Summarization**: Rolling summaries prevent prompt bloat in long-running tasks
+- 🎨 **Visual Overlay**: Real-time colorful indicators show what the agent is doing (clicks, typing, actions)
+- 🚀 **Auto-Discovery**: Automatically finds and launches Desktop apps (Bizmed, HBYS, etc.) without configuration
 
 ### Production Features (NEW)
 - 🏗️ **Hierarchical Planning**: Two-tier Planner/Worker architecture for long-horizon tasks
@@ -63,7 +65,7 @@ digital_humain/
 ### Prerequisites
 
 - Python 3.9+
-- Ollama (for local LLM inference)
+- Ollama (for local LLM inference) OR an OpenRouter API key (for cloud fallback)
 - Tesseract OCR (for screen text extraction)
 
 ### Platform Support
@@ -320,23 +322,50 @@ python examples/multi_agent_orchestration.py
 python examples/memory_demo.py
 ```
 
-## GUI Application
+## GUI Applications
 
-### Running from Python
+### Letta-Style GUI ⭐ NEW
 
-Launch the enhanced GUI with memory and recording features:
+Professional interface with advanced memory management inspired by Letta:
 
 ```bash
-python gui_app.py
+python gui_letta.py
+```
+
+**Key Features:**
+- 🧠 **Core Memory Blocks**: Human context (2000 chars) + Persona definition (2000 chars) with live character counters
+- 📚 **Archival Memory**: Long-term storage with search, add/view/delete capabilities
+- 💬 **Rich Conversations**: Timestamped messages with agent reasoning display
+- 📊 **Token Tracking**: Real-time context window usage with color-coded progress bar
+- 🎨 **Professional Design**: Three-panel Letta-inspired layout (Settings | Simulator | Context)
+- 🔍 **Memory Search**: Keyword-based retrieval across archival storage
+- 📝 **Structured Context**: Enforced character limits prevent context overflow
+
+See [docs/LETTA_GUI.md](docs/LETTA_GUI.md) for complete documentation.
+
+### Standard GUI
+
+Original feature-complete interface:
+
+```bash
+python gui_main.py
 ```
 
 The GUI includes:
 - **LLM Configuration**: Select provider (Ollama/OpenRouter/Letta) and model
+  - **Health Indicator**: Colored dot (green/red) shows provider connection status - hover for details
 - **Task Execution**: Natural language task input with voice support
 - **Recording Controls**: Record, save, and replay user demonstrations
 - **Memory Settings**: Configure episodic memory and replay speed
 - **Execution Logs**: Real-time logging of agent actions and decisions
 - **Stop Control**: Interrupt running tasks at any time
+- **Visual Indicators**: Toggle real-time action overlays (clicks, typing)
+
+Notes:
+- On startup, the app auto-detects which provider is available (Ollama first, then OpenRouter if `OPENROUTER_API_KEY` is set).
+- The health indicator (colored dot) shows provider status: green = connected, red = unavailable/misconfigured.
+- If Ollama is not installed or the service is not running, the app automatically falls back to OpenRouter when `OPENROUTER_API_KEY` is set.
+- You can manually switch providers from the LLM Configuration panel at any time.
 
 ### Building Standalone Executable
 
@@ -347,7 +376,7 @@ Create a standalone executable for distribution:
 pip install pyinstaller
 
 # Build the executable
-python build_exe.py
+python scripts/build_exe.py
 ```
 
 **Output by platform:**
@@ -413,11 +442,28 @@ Vision capabilities include:
 | Screen Understanding | llama3.2-vision | Claude Vision |
 | Action Planning | llama3.2 | GPT-4 |
 
+### Desktop Application Discovery
+
+Automatically discovers and launches applications on your computer:
+
+- **Auto-Scan**: Finds `.exe` and `.lnk` files on Desktop and in Program Files
+- **Natural Language**: Say "Open Bizmed" or "Launch HBYS" - no configuration needed
+- **Fuzzy Matching**: Partial names work (e.g., "biz" matches "bizmed")
+- **Desktop Priority**: Your Desktop shortcuts take precedence
+
+See [docs/APP_DISCOVERY.md](docs/APP_DISCOVERY.md) for full details.
+
+**Test what's discovered:**
+```bash
+python test_app_discovery.py
+```
+
 ### Tool System
 
 Extensible tool framework for:
 - File operations (read, write, list)
 - System interactions
+- Desktop application launching
 - Custom tool development
 
 ## Use Cases

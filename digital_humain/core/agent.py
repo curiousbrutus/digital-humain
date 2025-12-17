@@ -219,12 +219,13 @@ AVAILABLE ACTIONS:
 - type_text "text": Type text (put the exact text in quotes)
 - click (x, y): Click at coordinates
 - press_key [key]: Press a key (enter, tab, escape, etc.)
+- hotkey [key1]+[key2](+[key3]...): Press a key combination (e.g., ctrl+s)
 - task_complete: Mark the task as done when finished
 
 IMPORTANT RULES:
 1. Always state your intended action clearly (e.g., "I will open notepad" not "notepad must be opened")
 2. When you need to type something, put the EXACT text in quotes
-3. After completing the main task action, say "task complete" or "done"
+3. Only say "task complete" when ALL task requirements are satisfied (e.g., if asked to save/export, do that too)
 4. Think step-by-step and explain your reasoning before taking action
 
 Example good reasoning:
