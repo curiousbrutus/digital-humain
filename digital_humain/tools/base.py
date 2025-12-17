@@ -23,6 +23,14 @@ class ToolMetadata(BaseModel):
     returns: str = "Any"
 
 
+class ToolResult(BaseModel):
+    """Result of tool execution."""
+    success: bool
+    result: Optional[Any] = None
+    error: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
 class BaseTool(ABC):
     """
     Base class for tools that agents can use.

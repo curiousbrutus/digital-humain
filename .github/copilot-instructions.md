@@ -180,10 +180,10 @@ class MyTool(BaseTool):
 
 ## GUI Applications
 
-### GUI App (`gui_app.py`)
+### GUI App (`gui_main.py`)
 - Tkinter-based desktop application
 - Includes LLM configuration, task execution, and recording controls
-- Test manually with: `python gui_app.py`
+- Test manually with: `python gui_main.py`
 
 ### Web App (`web_app.py`)
 - Web-based interface for remote access
@@ -191,7 +191,7 @@ class MyTool(BaseTool):
 
 ### Building Executable
 ```bash
-python build_exe.py
+python scripts/build_exe.py
 ```
 Creates standalone Windows executable in `dist/`
 
@@ -268,4 +268,4 @@ except SpecificException as e:
 - [LangGraph Documentation](https://python.langchain.com/docs/langgraph/)
 - [Ollama Documentation](https://ollama.ai/docs)
 - [PyAutoGUI Documentation](https://pyautogui.readthedocs.io/)
-- [Project Documentation](docs/README.md)
+- [Project Documentation](../README.md)

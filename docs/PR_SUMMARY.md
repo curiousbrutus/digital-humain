@@ -1,5 +1,7 @@
 # PR Summary: Learning-from-User Capabilities
 
+> Note: This document is a historical PR-style summary. For the canonical, repo-accurate overview and current entrypoints, see `docs/START_HERE.md`.
+
 ## Overview
 
 This PR successfully implements comprehensive learning-from-user capabilities for the Digital Humain desktop automation agent, including demonstration recording/replay, episodic memory, and memory summarization features.
@@ -93,7 +95,7 @@ compressed = summarizer.get_compressed_history(full_history)
 - **New**: `examples/memory_demo.py` (210 lines)
 - **New**: `MEMORY_FEATURES.md` (7KB documentation)
 - **New**: `IMPLEMENTATION_SUMMARY_MEMORY.md` (13KB technical details)
-- **Modified**: `gui_app.py` (+150 lines for new controls)
+- **Modified**: `gui_main.py` (+controls for new features)
 - **Modified**: `requirements.txt` (added pynput, pygetwindow)
 - **Modified**: `README.md` (updated features and architecture)
 
@@ -200,7 +202,7 @@ pip install -r requirements.txt
 python examples/memory_demo.py
 
 # Launch GUI
-python gui_app.py
+python gui_main.py
 ```
 
 ### Using in Code

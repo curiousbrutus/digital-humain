@@ -6,6 +6,13 @@ import time
 import pyautogui
 from loguru import logger
 
+try:
+    from digital_humain.vlm.overlay import get_overlay
+    OVERLAY_AVAILABLE = True
+except ImportError:
+    OVERLAY_AVAILABLE = False
+    logger.warning("Visual overlay not available")
+
 
 class ActionType(str, Enum):
     """Types of GUI actions."""
@@ -29,18 +36,25 @@ class GUIActions:
     Provides methods for interacting with desktop applications.
     """
     
-    def __init__(self, pause: float = 0.5, safe_mode: bool = True):
+    def __init__(self, pause: float = 0.5, safe_mode: bool = True, show_overlay: bool = True):
         """
         Initialize GUI actions executor.
         
         Args:
             pause: Pause duration between actions (seconds)
             safe_mode: Enable fail-safe (move mouse to corner to abort)
+            show_overlay: Show visual overlay for actions
         """
         pyautogui.PAUSE = pause
         pyautogui.FAILSAFE = safe_mode
         self.action_history: List[Dict[str, Any]] = []
-        logger.info(f"Initialized GUIActions (pause={pause}s, safe_mode={safe_mode})")
+        self.show_overlay = show_overlay and OVERLAY_AVAILABLE
+        self.overlay = get_overlay() if self.show_overlay else None
+        
+        if self.show_overlay and self.overlay and not self.overlay.is_running:
+            self.overlay.start()
+        
+        logger.info(f"Initialized GUIActions (pause={pause}s, safe_mode={safe_mode}, overlay={self.show_overlay})")
     
     def _log_action(self, action_type: ActionType, params: Dict[str, Any]) -> None:
         """Log executed action."""
@@ -71,6 +85,14 @@ class GUIActions:
             Action result dictionary
         """
         try:
+            # Get position
+            pos_x, pos_y = (x, y) if x is not None and y is not None else pyautogui.position()
+            
+            # Show overlay indicator
+            if self.show_overlay and self.overlay:
+                self.overlay.show_click(pos_x, pos_y, button)
+            
+            # Execute click
             if x is not None and y is not None:
                 pyautogui.click(x, y, clicks=clicks, button=button)
             else:
@@ -144,6 +166,11 @@ class GUIActions:
             Action result dictionary
         """
         try:
+            # Show overlay indicator
+            if self.show_overlay and self.overlay:
+                pos = pyautogui.position()
+                self.overlay.show_typing(pos[0], pos[1], text)
+            
             pyautogui.write(text, interval=interval)
             
             self._log_action(ActionType.TYPE_TEXT, {

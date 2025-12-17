@@ -1,6 +1,6 @@
 # Prompt Pack for Expert Reviews
 
-Use these with Gemini Deep Research (or similar). Always attach both PROJECT_REPORT.md and co-expert-recommendations.md for full context.
+Use these with Gemini Deep Research (or similar). For best context, attach `START_HERE.md` and `PROJECT_REPORT.md`.
 
 ## Quick Context Snippet (paste first)
 Digital Humain is a privacy-first desktop automation agent using LangGraph state machines + ReAct. It automates GUIs with PyAutoGUI + OCR, supports local LLMs (Ollama) and cloud (OpenRouter/Letta), and ships as a standalone Windows .exe. Vision is placeholder (OCR-only). Known gaps: no sandboxing, limited error recovery, prone to reasoning loops, VLM not grounded. Goal: production-grade reliability, strong security, and VLM grounding.

@@ -119,7 +119,7 @@ except httpx.HTTPError as e:
 - Prevents double `/v1` in URLs
 - Free-first model ordering in `list_models()`
 
-#### 4.4 Validation (`gui_app.py`)
+#### 4.4 Validation (`gui_main.py`)
 **VERIFIED:** Already validates required env vars with clear errors:
 - OpenRouter: OPENROUTER_API_KEY
 - Letta: LETTA_API_KEY and LETTA_AGENT_ID
@@ -238,7 +238,7 @@ python -m pytest tests/unit/test_action_parser.py -v
 
 ### Manual Validation (requires GUI):
 ```bash
-python gui_app.py
+python gui_main.py
 # 1. Select provider (Ollama/OpenRouter/Letta)
 # 2. Enter task: "Open notepad and write 'Hello World'"
 # 3. Click "Run Task"
