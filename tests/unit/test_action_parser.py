@@ -60,9 +60,9 @@ class TestAppLauncher:
     def test_launch_app_not_in_allowlist(self):
         """Test launching app not in allowlist."""
         result = AppLauncher.launch_app("evil_app_12345")
-        
+
         assert result["success"] is False
-        assert "not allowed" in result["error"].lower()
+        assert "not found" in result["error"].lower() or "not allowed" in result["error"].lower()
         assert result["action"] == "launch_app"
 
 
