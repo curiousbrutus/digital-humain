@@ -381,11 +381,11 @@ class OrchestrationEngine:
         graph = {st.id: st.dependencies for st in subtasks}
         in_degree = {st.id: 0 for st in subtasks}
         
-        # Calculate in-degrees
+        # Calculate in-degrees (count how many dependencies each task has)
         for st_id, deps in graph.items():
             for dep in deps:
                 if dep in in_degree:
-                    in_degree[dep] += 1
+                    in_degree[st_id] += 1
         
         # Topological sort using Kahn's algorithm
         queue = [st_id for st_id, degree in in_degree.items() if degree == 0]

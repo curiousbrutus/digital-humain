@@ -396,12 +396,13 @@ class HierarchicalMemoryManager:
         # Page out items until we have enough space (target 70% capacity)
         target_size = int(self.max_main_context_size * 0.7)
         keys_to_page_out = []
+        size_to_free = 0
         
         for key, page in sorted_items:
-            if self.main_context_size <= target_size:
+            if self.main_context_size - size_to_free <= target_size:
                 break
             keys_to_page_out.append(key)
-            self.main_context_size -= page.size_bytes
+            size_to_free += page.size_bytes
         
         if keys_to_page_out:
             self.page_out(keys_to_page_out)
