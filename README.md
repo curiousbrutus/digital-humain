@@ -1,5 +1,7 @@
 # Digital Humain - Agentic AI for Enterprise Desktop Automation
 
+> 📖 **Documentation in other languages**: [Türkçe (Turkish)](README.tr.md) - Yeni başlayanlar için Türkçe kılavuz
+
 A self-hosted Python-based agentic AI framework for enterprise desktop automation, combining LangGraph-based orchestration with Vision Language Models (VLM) for GUI interaction.
 
 ## Features
