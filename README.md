@@ -919,7 +919,7 @@ Digital Humain açık kaynaklı bir projedir ve katkılarınızı bekliyoruz!
 
 ## 📝 Lisans
 
-[Lisans bilgisi eklenecek]
+[OpenSource 2.0]
 
 ---
 
@@ -941,8 +941,7 @@ Digital Humain açık kaynaklı bir projedir ve katkılarınızı bekliyoruz!
 
 ---
 
-🇹🇷 **Bu dokümantasyon Türk kullanıcılar için hazırlanmıştır.**
 
-📅 **Son güncelleme**: Aralık 2024
+📅 **Son güncelleme**: Aralık 2025
 
 💝 **Topluluk katkılarıyla geliştirilmiştir**
