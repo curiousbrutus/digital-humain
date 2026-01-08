@@ -1,186 +1,612 @@
-# Digital Humain - Agentic AI for Enterprise Desktop Automation
+# Digital Humain - Masaüstü Otomasyonu için Yapay Zeka Aracı
 
-A self-hosted Python-based agentic AI framework for enterprise desktop automation, combining LangGraph-based orchestration with Vision Language Models (VLM) for GUI interaction.
+> 🇹🇷 **Yeni Başlayanlar İçin Türkçe Kılavuz**
+> 
+> Bu dokümantasyon, programlamaya yeni başlayanlar için hazırlanmıştır. Her adımı detaylı olarak açıklayacağız.
 
-## Features
+## 📚 İçindekiler
 
-### Core Capabilities
-- 🤖 **Multi-Agent Orchestration**: Letta-like architecture for coordinating multiple specialized agents
-- 👁️ **Vision-Based GUI Interaction**: UI-TARS-like VLM capabilities for understanding and interacting with desktop applications
-- 🔒 **Data Privacy**: Local LLM integration (Ollama/vLLM) ensures all data stays on-premises
-- 🛠️ **Tool Execution Framework**: Extensible tool system for file operations and automation
-- 🧠 **Multi-Step Reasoning**: ReAct-pattern agents with observation, reasoning, and action capabilities
-- 📊 **Unstructured Data Handling**: Process various data formats for HBYS, Accounting, and Quality tasks
-- 🔄 **Shared Memory**: Context sharing between agents for collaborative task execution
-- 🎬 **Learn from User**: Record and replay user demonstrations for macro automation
-- 🧩 **Episodic Memory**: Store and retrieve past experiences for enhanced decision making
-- 📝 **Memory Summarization**: Rolling summaries prevent prompt bloat in long-running tasks
-- 🎨 **Visual Overlay**: Real-time colorful indicators show what the agent is doing (clicks, typing, actions)
-- 🚀 **Auto-Discovery**: Automatically finds and launches Desktop apps (Bizmed, HBYS, etc.) without configuration
+- [Digital Humain Nedir?](#digital-humain-nedir)
+- [Ne İşe Yarar?](#ne-i̇şe-yarar)
+- [Özellikler](#özellikler)
+- [Başlamadan Önce](#başlamadan-önce)
+- [Kurulum Adımları](#kurulum-adımları)
+- [Proje Yapısı](#proje-yapısı)
+- [İlk Kullanım](#i̇lk-kullanım)
+- [Grafiksel Arayüz](#grafiksel-arayüz)
+- [Örnek Kullanımlar](#örnek-kullanımlar)
+- [Ayarlar](#ayarlar)
+- [Sık Karşılaşılan Sorunlar](#sık-karşılaşılan-sorunlar)
+- [Temel Kavramlar](#temel-kavramlar)
 
-### Production Features (NEW)
-- 🏗️ **Hierarchical Planning**: Two-tier Planner/Worker architecture for long-horizon tasks
-- 🔄 **Automatic Recovery**: Explicit error handling with recovery nodes and exponential backoff
-- 🛡️ **Security Hardening**: Sandboxing support, prompt injection defense, and credential management
-- ⚡ **Performance Optimization**: Tool caching with 1.69x speedup, VLM quantization support
-- 📊 **Observability**: Prometheus metrics, structured logging, and audit trails
-- 🔀 **Hybrid Deployment**: Flexible local/cloud routing for privacy and performance
-- 🎯 **Smart Action Parsing**: Priority-based intent detection with explicit action command recognition
-- 🚀 **Auto-Advance Fallback**: Intelligent task progression when LLM returns empty responses
+---
 
-## Documentation
+## 🤖 Digital Humain Nedir?
 
-See [docs/README.md](docs/README.md) for the full documentation index (architecture, reports, summaries, prompts, and expert recommendations).
+**Digital Humain**, bilgisayarınızdaki programları otomatik olarak kontrol edebilen bir yapay zeka sistemidir. Ekranınızı görebilir, düğmelere tıklayabilir, metin yazabilir ve sizin yerinize tekrarlayan işleri yapabilir.
 
-## Architecture
+### Basit Bir Örnekle
 
+Diyelim ki her gün aynı Excel dosyasını açıp, belirli hücrelere veri giriyorsunuz. Digital Humain'e "Excel'i aç ve bu verileri gir" dediğinizde, o bunu otomatik olarak yapar.
+
+## 🎯 Ne İşe Yarar?
+
+Digital Humain şu alanlarda size yardımcı olabilir:
+
+- **İş Yazılımları**: HBYS, muhasebe programları gibi kurumsal yazılımları otomatik kullanma
+- **Veri Girişi**: Form doldurma, veri aktarma gibi tekrarlayan işleri otomatikleştirme
+- **Raporlama**: Düzenli raporları otomatik oluşturma
+- **Test İşlemleri**: Yazılım testlerini otomatik yapma
+- **Ofis Görevleri**: Word, Excel gibi programlarda rutin işleri otomatikleştirme
+
+## ✨ Özellikler
+
+### Temel Özellikler
+
+- 🤖 **Yapay Zeka Ajanları**: Farklı görevler için özelleşmiş yapay zeka asistanları
+- 👁️ **Ekran Görme Yeteneği**: Yapay zeka ekranınızı görebilir ve neyin nerede olduğunu anlayabilir
+- 🔒 **Veri Gizliliği**: Tüm işlemler bilgisayarınızda yapılır, verileriniz dışarı çıkmaz
+- 🛠️ **Araç Sistemi**: Dosya okuma, yazma gibi farklı işlevler için hazır araçlar
+- 🧠 **Akıllı Karar Verme**: Durumu analiz eder, ne yapacağına karar verir ve işlemi gerçekleştirir
+- 🎬 **Öğrenme Özelliği**: Yaptığınız işlemleri kaydedip daha sonra tekrar edebilir
+- 🎨 **Görsel Göstergeler**: Agent ne yapıyor görmek için ekranda renkli işaretler
+- 🚀 **Otomatik Uygulama Bulma**: Masaüstünüzdeki programları otomatik bulur ve açar
+
+### Gelişmiş Özellikler
+
+- 🏗️ **Hiyerarşik Planlama**: Büyük görevleri küçük parçalara böler ve adım adım yapar
+- 🔄 **Otomatik Hata Düzeltme**: Bir hata olursa tekrar deneyerek düzeltmeye çalışır
+- 🛡️ **Güvenlik**: Hassas verilerinizi korur
+- ⚡ **Hızlı Çalışma**: Akıllı önbellek sistemi ile daha hızlı çalışır
+- 📊 **Kayıt Tutma**: Ne yaptığının detaylı kaydını tutar
+
+## 📋 Başlamadan Önce
+
+### Gerekli Donanım
+
+Digital Humain'i çalıştırmak için bilgisayarınızda şu özellikler olmalı:
+
+| Bellek (RAM) | Ekran Kartı | Tavsiye Edilen Model | Kullanım |
+|--------------|-------------|----------------------|----------|
+| **8GB** | Yok | Hafif modeller (moondream, llama3.2:1b) | Basit görevler |
+| **16GB** | 2-4GB | Orta modeller (llama3.2:3b) | Çoğu görev için yeterli |
+| **32GB** | 8GB+ | Büyük modeller (llama3.2-vision) | Gelişmiş kullanım |
+
+**Not**: 8GB RAM'li bir bilgisayar temel görevler için yeterlidir.
+
+### Gerekli Yazılımlar
+
+1. **Python 3.9 veya üzeri**: Programın çalışması için gerekli
+2. **Ollama**: Yapay zeka modellerini bilgisayarınızda çalıştırır (ücretsiz)
+3. **Tesseract OCR**: Ekrandaki metinleri okur (ücretsiz)
+
+### İşletim Sistemi Desteği
+
+| İşletim Sistemi | Durum | Notlar |
+|-----------------|-------|--------|
+| **Windows** | ✅ Tam Destek | Windows 10/11 |
+| **Linux** | ✅ Tam Destek | Ubuntu 22.04+ test edildi |
+| **macOS** | ✅ Destekleniyor | Ek kurulum gerekebilir |
+
+---
+
+## 🚀 Kurulum Adımları
+
+Her adımı sırasıyla takip edin. Bir sorun çıkarsa [Sık Karşılaşılan Sorunlar](#sık-karşılaşılan-sorunlar) bölümüne bakın.
+
+### Adım 1: Python Kurulumu
+
+**Python nedir?** Digital Humain Python programlama dili ile yazılmıştır. Python'u bilgisayarınıza kurmanız gerekir.
+
+#### Windows için:
 ```
-digital_humain/
-├── core/               # Core agent framework
-│   ├── agent.py       # Base agent with ReAct pattern
-│   ├── engine.py      # LangGraph-based execution engine
-│   └── llm.py         # LLM provider integrations
-├── vlm/               # Vision Language Model module
-│   ├── screen_analyzer.py  # Screen capture and analysis
-│   └── actions.py          # GUI action execution
-├── memory/            # Learning and recall systems
-│   ├── demonstration.py # Record/replay user actions
-│   └── episodic.py    # Episodic memory and summarization
-├── orchestration/     # Multi-agent coordination
-│   ├── coordinator.py # Task decomposition and delegation
-│   ├── registry.py    # Agent registry
-│   └── memory.py      # Shared memory for agents
-├── tools/             # Tool execution framework
-│   ├── base.py        # Tool interface
-│   └── file_tools.py  # File operation tools
-├── agents/            # Concrete agent implementations
-│   └── automation_agent.py  # Desktop automation agent
-└── utils/             # Utilities and configuration
-    ├── logger.py      # Logging setup
-    └── config.py      # Configuration management
+1. https://www.python.org/downloads/ adresine gidin
+2. "Download Python" butonuna tıklayın
+3. İndirilen dosyayı çalıştırın
+4. MUTLAKA "Add Python to PATH" kutucuğunu işaretleyin
+5. "Install Now" butonuna tıklayın
 ```
 
-## Installation
-
-### Prerequisites
-
-- Python 3.9+
-- Ollama (for local LLM inference) OR an OpenRouter API key (for cloud fallback)
-- Tesseract OCR (for screen text extraction)
-
-### Platform Support
-
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **Linux** | ✅ Full Support | Tested on Ubuntu 22.04+ |
-| **Windows** | ✅ Full Support | Windows 10/11 |
-| **macOS** | ✅ Supported | Requires additional setup |
-
-### Setup
-
-1. Clone the repository:
+#### Linux için:
 ```bash
+# Terminal'i açın ve şu komutu yazın:
+sudo apt update
+sudo apt install python3 python3-pip
+```
+
+#### macOS için:
+```bash
+# Terminal'i açın ve şu komutu yazın:
+brew install python3
+```
+
+**Kontrol**: Python'un doğru kurulup kurulmadığını kontrol etmek için terminal/komut istemi'ni açın ve şunu yazın:
+```bash
+python --version
+```
+Çıktı: `Python 3.9.0` veya üzeri bir sürüm görmelisiniz.
+
+### Adım 2: Digital Humain'i İndirin
+
+**Git nedir?** Kod projelerini indirmek ve yönetmek için kullanılan bir araçtır.
+
+#### Git Kurulumu:
+
+**Windows için:** https://git-scm.com/download/win adresinden indirip kurun.
+
+**Linux için:**
+```bash
+sudo apt install git
+```
+
+**macOS için:**
+```bash
+brew install git
+```
+
+#### Projeyi İndirin:
+
+Terminal veya Komut İstemi'ni açın ve şu komutları yazın:
+
+```bash
+# Projeyi indirin
 git clone https://github.com/curiousbrutus/digital-humain.git
+
+# İndirilen klasöre girin
 cd digital-humain
 ```
 
-2. Install dependencies:
+**Ne yaptık?** Digital Humain'in tüm dosyalarını bilgisayarınıza kopyaladık.
+
+### Adım 3: Gerekli Kütüphaneleri Kurun
+
+**Kütüphane nedir?** Python programlarının ihtiyaç duyduğu ek kod parçalarıdır.
+
 ```bash
+# digital-humain klasöründeyken şu komutu çalıştırın:
 pip install -r requirements.txt
 ```
 
-3. Install Tesseract OCR:
+**Bu işlem biraz zaman alabilir** (5-10 dakika). İnternet bağlantınızın iyi olması gerekir.
+
+**Sorun çıkarsa:**
 ```bash
-# Linux (Ubuntu/Debian)
-sudo apt install tesseract-ocr
+# Windows'ta şunu deneyin:
+python -m pip install -r requirements.txt
 
-# Windows - Download from:
-# https://github.com/UB-Mannheim/tesseract/wiki
+# Veya:
+pip3 install -r requirements.txt
+```
 
-# macOS
+### Adım 4: Tesseract OCR Kurulumu
+
+**Tesseract nedir?** Ekrandaki metinleri okuyabilen bir araçtır (örneğin, bir düğmenin üzerindeki yazıyı).
+
+#### Windows için:
+```
+1. https://github.com/UB-Mannheim/tesseract/wiki adresine gidin
+2. En son sürümü indirin (örn: tesseract-ocr-w64-setup-5.3.1.exe)
+3. İndirilen dosyayı çalıştırıp kurun
+4. Kurulum sırasında "Additional language data" seçeneğinden Türkçe'yi seçin
+```
+
+#### Linux için:
+```bash
+sudo apt install tesseract-ocr tesseract-ocr-tur
+```
+
+#### macOS için:
+```bash
 brew install tesseract
 ```
 
-4. Install screenshot dependencies (Linux only):
+**Kontrol**: Tesseract'ın kurulduğunu kontrol edin:
 ```bash
-# Required for PyAutoGUI screenshots on Linux
-sudo apt install gnome-screenshot scrot
+tesseract --version
 ```
 
-5. Install and configure Ollama (see next section)
+### Adım 5: Linux için Ek Kurulum (Sadece Linux Kullanıcıları)
 
-## LLM & VLM Configuration
-
-Digital Humain supports multiple LLM providers and Vision Language Models for different use cases.
-
-### Ollama (Recommended for Privacy)
-
-Ollama provides local LLM inference - all processing stays on your machine.
+Linux kullanıyorsanız ekran görüntüsü için ek araçlar gerekir:
 
 ```bash
-# Install Ollama (https://ollama.ai)
-curl -fsSL https://ollama.ai/install.sh | sh
+# Ekran görüntüsü araçları
+sudo apt install scrot gnome-screenshot
 
-# Start Ollama server
+# PyAutoGUI için gerekli kütüphaneler
+sudo apt install python3-tk python3-dev
+
+# X11 kütüphaneleri
+sudo apt install python3-xlib
+```
+
+### Adım 6: Ollama Kurulumu
+
+**Ollama nedir?** Yapay zeka modellerini bilgisayarınızda çalıştırmanıza yarayan ücretsiz bir programdır. Bu sayede verileriniz bilgisayarınızdan çıkmaz.
+
+#### Ollama'yı Kurun:
+
+**Linux/macOS için:**
+```bash
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+**Windows için:**
+```
+1. https://ollama.ai/download adresine gidin
+2. Windows sürümünü indirin
+3. İndirilen dosyayı çalıştırıp kurun
+```
+
+#### Ollama'yı Başlatın:
+
+```bash
+# Ollama servisini başlatın
 ollama serve
 ```
 
-#### Recommended Models by System Specs
+**Bu komutu çalıştırdıktan sonra terminal penceresi açık kalmalıdır.** Yeni bir terminal penceresi açın ve devam edin.
 
-| RAM | GPU VRAM | Recommended Models | Use Case |
-|-----|----------|-------------------|----------|
-| **8GB** | None | `llama3.2:1b`, `qwen2.5:1.5b` | Basic agent reasoning |
-| **16GB** | 2-4GB | `moondream`, `llama3.2:3b` | VLM + reasoning |
-| **32GB** | 8GB+ | `llama3.2-vision`, `llava:7b` | Full VLM capabilities |
-| **64GB+** | 12GB+ | `llava:13b`, `llama3.1:70b` | Enterprise workloads |
+#### Yapay Zeka Modelini İndirin:
 
-#### Setting Up Moondream (Lightweight VLM)
+**Moondream (Tavsiye Edilen - Hafif)**
 
-**Moondream** is ideal for resource-constrained systems - only ~1.7GB and runs on CPU:
+8GB RAM'li bilgisayarlar için idealdir:
 
 ```bash
-# Pull moondream model
 ollama pull moondream
-
-# Test it
-ollama run moondream "Describe what you see" --images ./screenshot.png
 ```
 
-**Moondream capabilities:**
-- ✅ Screen/UI element identification
-- ✅ Text recognition in images
-- ✅ Button/form field detection
-- ✅ Layout understanding
-- ⚠️ Limited complex reasoning (pair with text LLM)
+**Açıklama**: Moondream, sadece 1.7GB boyutunda ve ekranı görebilen hafif bir modeldir.
 
-#### Setting Up Llama 3.2 Vision (Full VLM)
-
-For systems with more resources:
+**Diğer Model Seçenekleri:**
 
 ```bash
-# Pull llama3.2-vision (requires ~4GB RAM)
+# Sadece metin için (daha küçük, daha hızlı)
+ollama pull llama3.2:1b
+
+# Daha güçlü ekran görme (4GB gerektirir)
 ollama pull llama3.2-vision
 
-# Or for text-only reasoning
-ollama pull llama3.2
+# Daha büyük metin modeli (daha akıllı)
+ollama pull llama3.2:3b
 ```
 
-#### Configuration
+**Model Karşılaştırması:**
 
-Update `config/config.yaml`:
+| Model | Boyut | Hız | Kullanım |
+|-------|-------|-----|----------|
+| **llama3.2:1b** | 700MB | ⚡ Çok Hızlı | Basit metin işleme |
+| **moondream** | 1.7GB | ⚡ Hızlı | Ekran görme + metin (TAVSİYE) |
+| **llama3.2:3b** | 2GB | 🚀 Orta | Daha akıllı işlemler |
+| **llama3.2-vision** | 4GB | 🚀 Orta | Gelişmiş ekran analizi |
+
+**Test**: Modelin çalışıp çalışmadığını test edin:
+```bash
+ollama run moondream "Merhaba, nasılsın?"
+```
+
+### Adım 7: Ayar Dosyasını Düzenleyin
+
+**Ayar dosyası nedir?** Digital Humain'in nasıl çalışacağını belirten dosyadır.
+
+```bash
+# Ayar dosyasını açın
+# Windows'ta:
+notepad config/config.yaml
+
+# Linux/macOS'ta:
+nano config/config.yaml
+```
+
+**Önemli Ayarlar:**
 
 ```yaml
 llm:
-  provider: ollama
-  model: moondream  # or llama3.2, llama3.2-vision, etc.
+  provider: ollama          # Ollama kullanıyoruz
+  model: moondream          # Hangi model kullanılacak
   base_url: http://localhost:11434
   temperature: 0.7
   timeout: 300
 ```
 
-### OpenRouter (Cloud Alternative)
+**temperature nedir?** Yapay zekanın ne kadar yaratıcı olacağını belirler:
+- 0.0 = Hep aynı cevapları verir (tekrarlayan görevler için)
+- 0.7 = Dengeli (tavsiye edilen)
+- 1.0 = Daha yaratıcı ama bazen beklenmedik
 
-For complex tasks or when local resources are limited, use OpenRouter's API:
+Dosyayı kaydedin ve kapatın.
+
+---
+
+## 📁 Proje Yapısı
+
+Digital Humain projesinin klasörleri ve ne işe yaradıkları:
+
+```
+digital-humain/
+│
+├── 📁 digital_humain/          # Ana program kodları
+│   │
+│   ├── 📁 core/                # Temel yapı taşları
+│   │   ├── agent.py           # Agent'ların ana yapısı
+│   │   ├── engine.py          # Agent'ları çalıştıran motor
+│   │   └── llm.py             # Yapay zeka ile iletişim
+│   │
+│   ├── 📁 vlm/                 # Görme özellikleri
+│   │   ├── screen_analyzer.py # Ekranı analiz eder
+│   │   ├── actions.py         # Tıklama, yazma gibi işlemler
+│   │   └── overlay.py         # Ekranda görsel göstergeler
+│   │
+│   ├── 📁 agents/              # Farklı amaçlar için agent'lar
+│   │   ├── automation_agent.py    # Masaüstü otomasyonu agent'ı
+│   │   └── hierarchical_planning.py # Büyük görevleri planlayan agent
+│   │
+│   ├── 📁 tools/               # Agent'ların kullandığı araçlar
+│   │   ├── file_tools.py      # Dosya okuma, yazma
+│   │   ├── system_tools.py    # Sistem komutları
+│   │   └── browser_tools.py   # Web tarayıcı işlemleri
+│   │
+│   ├── 📁 memory/              # Öğrenme ve hafıza sistemi
+│   │   ├── episodic.py        # Geçmiş deneyimleri hatırlar
+│   │   └── demonstration.py   # Kullanıcı gösterilerini kaydeder
+│   │
+│   ├── 📁 orchestration/       # Birden fazla agent koordinasyonu
+│   │   ├── coordinator.py     # Agent'ları yönetir
+│   │   ├── registry.py        # Agent kayıt sistemi
+│   │   └── memory.py          # Paylaşılan hafıza
+│   │
+│   └── 📁 utils/               # Yardımcı araçlar
+│       ├── logger.py          # Kayıt sistemi
+│       └── config.py          # Ayar yönetimi
+│
+├── 📁 config/                  # Ayar dosyaları
+│   └── config.yaml            # Ana ayar dosyası
+│
+├── 📁 examples/                # Örnek kullanımlar
+│   ├── simple_automation.py   # Basit otomasyon örneği
+│   ├── multi_agent_orchestration.py  # Çoklu agent örneği
+│   └── memory_demo.py         # Hafıza özellikleri örneği
+│
+├── 📁 tests/                   # Test dosyaları
+│   ├── unit/                  # Birim testler
+│   └── integration/           # Entegrasyon testleri
+│
+├── 📁 docs/                    # Dokümantasyon
+│
+├── 📄 gui_main.py              # Ana grafiksel arayüz
+├── 📄 gui_letta.py             # Gelişmiş arayüz
+├── 📄 requirements.txt         # Gerekli kütüphaneler listesi
+└── 📄 README.md                # Bu dosya (İngilizce)
+```
+
+### Klasörlerin Detaylı Açıklaması
+
+#### 🤖 `core/` - Temel Sistem
+
+Bu klasör, Digital Humain'in beyni gibidir. Agent'ların nasıl çalışacağını, yapay zeka ile nasıl konuşacağını belirler.
+
+- **agent.py**: Tüm agent'ların temel yapısı. Bir agent'ın mutlaka "gözlem yap", "düşün", "hareket et" yetenekleri olur.
+- **engine.py**: Agent'ları çalıştıran motor. Bir görev verildiğinde agent'ı başlatır ve tamamlanana kadar çalıştırır.
+- **llm.py**: Yapay zeka modelleri (Ollama, OpenRouter) ile konuşmayı sağlar.
+
+#### 👁️ `vlm/` - Görme Özellikleri
+
+VLM = Vision Language Model (Görsel Dil Modeli). Bu klasör, agent'ın ekranı görmesini ve anlamsını sağlar.
+
+- **screen_analyzer.py**: Ekranın fotoğrafını çeker ve yapay zekaya "bu ekranda ne var?" diye sorar.
+- **actions.py**: Mouse'u hareket ettirir, tıklar, klavyeden yazar.
+- **overlay.py**: Ekranda renkli işaretler gösterir (agent'ın nereye tıkladığını görmeniz için).
+
+#### 🤖 `agents/` - Özelleşmiş Agent'lar
+
+Farklı işler için hazırlanmış agent'lar burada.
+
+- **automation_agent.py**: Masaüstü programlarını otomatik kullanır.
+- **hierarchical_planning.py**: Büyük görevleri küçük adımlara böler ve planlar.
+
+#### 🛠️ `tools/` - Araçlar
+
+Agent'ların işlerini yapması için kullandıkları araçlar.
+
+- **file_tools.py**: Dosya okuma, yazma, listeleme
+- **system_tools.py**: Program açma, komut çalıştırma
+- **browser_tools.py**: Web tarayıcıda arama yapma, sayfa açma
+
+#### 🧠 `memory/` - Hafıza Sistemi
+
+Agent'ların öğrenmesini ve hatırlamasını sağlar.
+
+- **episodic.py**: Geçmişte ne yaptığını hatırlar ("Daha önce bu ekranı gördüm, şunu yapmıştım")
+- **demonstration.py**: Sizin yaptığınız işlemleri kaydeder ve tekrar eder
+
+#### 🎭 `orchestration/` - Orkestrasyon
+
+Birden fazla agent'ı koordine eder.
+
+- **coordinator.py**: "Bu görevi sen yap, şunu da sen yap" diye agent'lara görev dağıtır
+- **registry.py**: Hangi agent'lar mevcut, ne yapabiliyorlar bilgisini tutar
+- **memory.py**: Agent'ların birbirleriyle bilgi paylaşmasını sağlar
+
+---
+
+## 🎮 İlk Kullanım
+
+### Test: Kurulum Tamamlandı mı?
+
+Herşeyin doğru kurulup kurulmadığını test edelim:
+
+```bash
+# Ollama çalışıyor mu?
+curl http://localhost:11434/api/tags
+
+# Python ve kütüphaneler kurulu mu?
+python -c "import digital_humain; print('OK')"
+
+# Tesseract kurulu mu?
+tesseract --version
+```
+
+Hepsi hatasız çalışıyorsa, kurulum tamamdır! 🎉
+
+### Basit Bir Örnek Çalıştırın
+
+```bash
+# Basit otomasyon örneğini çalıştırın
+python examples/simple_automation.py
+```
+
+Bu örnek, ekranı analiz eder ve ne gördüğünü söyler.
+
+---
+
+## 🖥️ Grafiksel Arayüz
+
+Digital Humain'i kullanmanın en kolay yolu grafiksel arayüzüdür.
+
+### Ana Arayüzü Başlatın
+
+```bash
+python gui_main.py
+```
+
+**Arayüz Açıklaması:**
+
+1. **LLM Yapılandırma Paneli** (Sol üst)
+   - **Sağlayıcı**: Ollama veya OpenRouter seçin
+   - **Model**: Hangi yapay zeka modelini kullanacağınızı seçin
+   - **Sağlık Göstergesi**: Yeşil nokta = bağlantı var, Kırmızı = sorun var
+
+2. **Görev Yürütme** (Orta)
+   - **Görev girişi**: Ne yapmak istediğinizi yazın
+   - **Çalıştır**: Görevi başlatır
+   - **Durdur**: Çalışan görevi iptal eder
+
+3. **Kayıt Kontrolleri** (Sağ)
+   - **Kaydı Başlat**: Yaptığınız işlemleri kaydeder
+   - **Kaydı Durdur**: Kaydı bitirir
+   - **Kaydet**: Kaydı dosyaya kaydeder
+   - **Yükle**: Önceki kaydı açar
+   - **Tekrarla**: Kaydı otomatik tekrar eder
+
+4. **Yürütme Günlükleri** (Alt)
+   - Agent'ın ne yaptığını gösterir
+
+### Gelişmiş Arayüz (Letta Stili)
+
+Daha profesyonel bir arayüz için:
+
+```bash
+python gui_letta.py
+```
+
+Bu arayüz şunları sunar:
+- 🧠 **Hafıza Blokları**: Agent'ın sizi ve kendisini hatırlaması
+- 📚 **Arşiv Hafızası**: Uzun süreli bilgi depolama
+- 💬 **Zengin Konuşmalar**: Zaman damgalı mesajlar
+- 📊 **Token İzleme**: Ne kadar bellek kullanıldığını görme
+
+---
+
+## 💡 Örnek Kullanımlar
+
+### Örnek 1: Ekranı Analiz Etme
+
+```python
+from digital_humain.vlm.screen_analyzer import ScreenAnalyzer
+from digital_humain.core.llm import OllamaProvider
+
+# Ekran analizörü oluştur
+vlm = OllamaProvider(model="moondream")
+analyzer = ScreenAnalyzer(vlm_provider=vlm, save_screenshots=True)
+
+# Ekranı analiz et
+result = analyzer.analyze_screen("Ekranda hangi düğmeler var?")
+print(result)
+```
+
+**Ne yapar?** Ekranın fotoğrafını çeker ve "hangi düğmeler var?" sorusunun cevabını verir.
+
+### Örnek 2: Basit Otomasyon
+
+```python
+from digital_humain.core.agent import AgentConfig, AgentRole
+from digital_humain.core.llm import OllamaProvider
+from digital_humain.agents.automation_agent import DesktopAutomationAgent
+
+# Agent yapılandırması
+config = AgentConfig(
+    name="otomasyon_agenti",
+    role=AgentRole.EXECUTOR,
+    max_iterations=10  # Maksimum 10 adım
+)
+
+# Agent oluştur
+llm = OllamaProvider(model="moondream")
+agent = DesktopAutomationAgent(config=config, llm_provider=llm)
+
+# Görevi çalıştır
+result = agent.execute("Notepad'i aç ve 'Merhaba Dünya' yaz")
+print(result)
+```
+
+**Ne yapar?** Notepad programını açar ve içine "Merhaba Dünya" yazar.
+
+### Örnek 3: Dosya İşlemleri
+
+```python
+from digital_humain.tools.file_tools import FileReadTool, FileWriteTool
+
+# Dosya okuma
+read_tool = FileReadTool()
+content = read_tool.execute(path="./belgeler/notlar.txt")
+print(f"Dosya içeriği: {content}")
+
+# Dosya yazma
+write_tool = FileWriteTool()
+write_tool.execute(
+    path="./belgeler/yeni_not.txt",
+    content="Bu Digital Humain ile yazıldı!"
+)
+```
+
+**Ne yapar?** Bir dosyayı okur ve yeni bir dosya oluşturur.
+
+---
+
+## ⚙️ Ayarlar
+
+### Yapay Zeka Modelini Değiştirme
+
+`config/config.yaml` dosyasını açın:
+
+```yaml
+llm:
+  provider: ollama
+  model: moondream    # Bunu değiştirebilirsiniz
+  base_url: http://localhost:11434
+  temperature: 0.7
+```
+
+**Model seçenekleri:**
+- `moondream` - Hafif, ekran görme var (TAVSİYE)
+- `llama3.2:1b` - Çok hafif, sadece metin
+- `llama3.2:3b` - Daha akıllı, daha yavaş
+- `llama3.2-vision` - Gelişmiş ekran görme
+
+### Cloud (Bulut) Kullanımı
+
+Bilgisayarınız yeterince güçlü değilse, internet üzerinden yapay zeka kullanabilirsiniz:
+
+1. https://openrouter.ai adresine gidin ve kayıt olun
+2. API anahtarınızı alın
+3. Proje klasöründe `.env` dosyası oluşturun:
+
+```bash
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxx
+```
+
+4. `config/config.yaml` dosyasını düzenleyin:
 
 ```yaml
 llm:
@@ -191,413 +617,331 @@ llm:
     default_model: google/gemini-2.0-flash-exp:free
 ```
 
-**Free models on OpenRouter:**
-- `google/gemini-2.0-flash-exp:free` - Fast, good for reasoning
-- `meta-llama/llama-3.2-11b-vision-instruct:free` - Vision capable
-- `qwen/qwen-2.5-72b-instruct:free` - Strong reasoning
+**Ücretsiz modeller:**
+- `google/gemini-2.0-flash-exp:free` - Hızlı ve akıllı
+- `meta-llama/llama-3.2-11b-vision-instruct:free` - Ekran görme var
+- `qwen/qwen-2.5-72b-instruct:free` - Çok akıllı
 
-Create `.env` file:
+### Diğer Ayarlar
+
+```yaml
+# Agent davranışı
+agent:
+  max_iterations: 10          # Maksimum adım sayısı
+  timeout: 300                # Zaman aşımı (saniye)
+
+# Ekran görüntüsü
+vlm:
+  save_screenshots: true      # Ekran görüntülerini kaydet
+  screenshot_dir: screenshots # Kaydedilecek klasör
+
+# Kayıt sistemi
+logging:
+  level: INFO                 # DEBUG, INFO, WARNING, ERROR
+  file: logs/digital_humain.log
+```
+
+---
+
+## 🔧 Sık Karşılaşılan Sorunlar
+
+### Sorun 1: "Ollama'ya bağlanılamıyor"
+
+**Çözüm:**
 ```bash
-OPENROUTER_API_KEY=sk-or-v1-xxxxx
+# Ollama'nın çalıştığından emin olun
+ollama serve
+
+# Başka bir terminalde test edin
+curl http://localhost:11434/api/tags
 ```
 
-### Hybrid Setup (Recommended for Production)
+Eğer hata veriyorsa, Ollama'yı yeniden kurun.
 
-Use local models for privacy-sensitive screen analysis, cloud for complex reasoning:
+### Sorun 2: "Tesseract bulunamadı"
 
-```python
-# Local VLM for screen capture (no data leaves your machine)
-screen_analyzer = ScreenAnalyzer(vlm_provider=OllamaProvider(model="moondream"))
+**Çözüm:**
 
-# Cloud LLM for complex planning (only sends task descriptions)
-planner_llm = OpenRouterProvider(model="google/gemini-2.0-flash-exp:free")
+**Windows:**
+1. Tesseract'ı yeniden kurun
+2. Çevre değişkenlerine PATH ekleyin:
+   - Bilgisayarım → Özellikler → Gelişmiş sistem ayarları
+   - Çevre Değişkenleri → Path → Düzenle
+   - `C:\Program Files\Tesseract-OCR` ekleyin
+
+**Linux:**
+```bash
+sudo apt install tesseract-ocr
 ```
 
-### VLM Comparison Table
+### Sorun 3: "PyAutoGUI ekran görüntüsü alamıyor" (Linux)
 
-| Model | Size | Speed | Quality | Best For |
-|-------|------|-------|---------|----------|
-| **moondream** | 1.7GB | ⚡ Fast | Good | Low-resource systems, basic UI detection |
-| **llava:7b** | 4.5GB | Medium | Better | General desktop automation |
-| **llama3.2-vision** | 4GB | Medium | Better | Balanced performance |
-| **llava:13b** | 8GB | Slow | Best | Complex UI analysis |
-| **GPT-4V** (API) | N/A | Fast | Excellent | Maximum accuracy (requires API) |
-
-## Quick Start
-
-### Simple Desktop Automation
-
-```python
-from digital_humain.core.agent import AgentConfig, AgentRole
-from digital_humain.core.llm import OllamaProvider
-from digital_humain.core.engine import AgentEngine
-from digital_humain.agents.automation_agent import DesktopAutomationAgent
-from digital_humain.vlm.screen_analyzer import ScreenAnalyzer
-from digital_humain.vlm.actions import GUIActions
-from digital_humain.tools.base import ToolRegistry
-from digital_humain.tools.file_tools import FileReadTool
-
-# Initialize components with moondream VLM
-llm = OllamaProvider(model="moondream")  # or "llama3.2-vision"
-screen_analyzer = ScreenAnalyzer()
-gui_actions = GUIActions()
-tool_registry = ToolRegistry()
-tool_registry.register(FileReadTool())
-
-# Create agent
-agent_config = AgentConfig(
-    name="automation_agent",
-    role=AgentRole.EXECUTOR,
-    max_iterations=10
-)
-
-agent = DesktopAutomationAgent(
-    config=agent_config,
-    llm_provider=llm,
-    screen_analyzer=screen_analyzer,
-    gui_actions=gui_actions,
-    tool_registry=tool_registry
-)
-
-# Execute task
-engine = AgentEngine(agent)
-result = engine.run("Analyze the current screen and identify key elements")
+**Çözüm:**
+```bash
+# Gerekli araçları kurun
+sudo apt install scrot gnome-screenshot python3-tk
 ```
 
-### Using VLM for Screen Analysis
+### Sorun 4: "ModuleNotFoundError: No module named 'digital_humain'"
 
-```python
-from digital_humain.vlm.screen_analyzer import ScreenAnalyzer
-from digital_humain.core.llm import OllamaProvider
+**Çözüm:**
+```bash
+# Doğru klasörde olduğunuzdan emin olun
+cd /path/to/digital-humain
 
-# Initialize with moondream for lightweight VLM
-vlm = OllamaProvider(model="moondream")
-analyzer = ScreenAnalyzer(vlm_provider=vlm, save_screenshots=True)
+# Kütüphaneleri yeniden kurun
+pip install -r requirements.txt
 
-# Capture and analyze current screen
-result = analyzer.analyze_screen("Find the login button")
-print(result)
-
-# Get screen info
-info = analyzer.get_screen_info()
-print(f"Screen size: {info['screen_size']}")
-print(f"Mouse position: {info['mouse_position']}")
+# Veya geliştirici modunda kurun
+pip install -e .
 ```
 
-### Multi-Agent Orchestration
+### Sorun 5: "Bellek hatası / Out of Memory"
 
-```python
-from digital_humain.orchestration.coordinator import AgentCoordinator
-from digital_humain.orchestration.registry import AgentRegistry
-from digital_humain.orchestration.memory import SharedMemory
+**Çözüm:**
 
-# Create coordinator
-registry = AgentRegistry()
-memory = SharedMemory()
-coordinator = AgentCoordinator(registry=registry, memory=memory)
-
-# Register agents
-coordinator.register_agent(planner_agent)
-coordinator.register_agent(executor_agent)
-coordinator.register_agent(analyzer_agent)
-
-# Execute complex task
-result = coordinator.execute_task(
-    "Analyze the accounting software, plan data entry steps, and execute the workflow"
-)
-```
-
-## Examples
-
-Run the provided examples:
+Daha küçük bir model kullanın:
 
 ```bash
-# Simple automation example
-python examples/simple_automation.py
+# Moondream yerine daha küçük model
+ollama pull llama3.2:1b
 
-# Multi-agent orchestration example
-python examples/multi_agent_orchestration.py
-
-# Memory and learning features demo
-python examples/memory_demo.py
+# config.yaml'de değiştirin
+model: llama3.2:1b
 ```
 
-## GUI Applications
+### Sorun 6: "Agent hiçbir şey yapmıyor"
 
-### Letta-Style GUI ⭐ NEW
+**Çözüm:**
 
-Professional interface with advanced memory management inspired by Letta:
+1. Görevi daha açık yazın:
+   - ❌ Kötü: "bir şeyler yap"
+   - ✅ İyi: "Notepad'i aç ve 'test' yaz"
 
+2. Loglara bakın:
 ```bash
-python gui_letta.py
+# Detaylı log için
+python gui_main.py --log-level DEBUG
 ```
 
-**Key Features:**
-- 🧠 **Core Memory Blocks**: Human context (2000 chars) + Persona definition (2000 chars) with live character counters
-- 📚 **Archival Memory**: Long-term storage with search, add/view/delete capabilities
-- 💬 **Rich Conversations**: Timestamped messages with agent reasoning display
-- 📊 **Token Tracking**: Real-time context window usage with color-coded progress bar
-- 🎨 **Professional Design**: Three-panel Letta-inspired layout (Settings | Simulator | Context)
-- 🔍 **Memory Search**: Keyword-based retrieval across archival storage
-- 📝 **Structured Context**: Enforced character limits prevent context overflow
-
-See [docs/LETTA_GUI.md](docs/LETTA_GUI.md) for complete documentation.
-
-### Standard GUI
-
-Original feature-complete interface:
-
+3. Model çalışıyor mu test edin:
 ```bash
-python gui_main.py
+ollama run moondream "Merhaba"
 ```
 
-The GUI includes:
-- **LLM Configuration**: Select provider (Ollama/OpenRouter/Letta) and model
-  - **Health Indicator**: Colored dot (green/red) shows provider connection status - hover for details
-- **Task Execution**: Natural language task input with voice support
-- **Recording Controls**: Record, save, and replay user demonstrations
-- **Memory Settings**: Configure episodic memory and replay speed
-- **Execution Logs**: Real-time logging of agent actions and decisions
-- **Stop Control**: Interrupt running tasks at any time
-- **Visual Indicators**: Toggle real-time action overlays (clicks, typing)
+### Sorun 7: GUI açılmıyor
 
-Notes:
-- On startup, the app auto-detects which provider is available (Ollama first, then OpenRouter if `OPENROUTER_API_KEY` is set).
-- The health indicator (colored dot) shows provider status: green = connected, red = unavailable/misconfigured.
-- If Ollama is not installed or the service is not running, the app automatically falls back to OpenRouter when `OPENROUTER_API_KEY` is set.
-- You can manually switch providers from the LLM Configuration panel at any time.
+**Çözüm:**
 
-### Building Standalone Executable
-
-Create a standalone executable for distribution:
-
+**Linux:**
 ```bash
-# Install PyInstaller
-pip install pyinstaller
+# Tkinter kurulu mu?
+sudo apt install python3-tk
 
-# Build the executable
-python scripts/build_exe.py
+# Display ayarları
+echo $DISPLAY  # Boş olmamalı
+export DISPLAY=:0
 ```
 
-**Output by platform:**
-- **Windows**: `dist/DigitalHumain.exe`
-- **Linux**: `dist/DigitalHumain`
-- **macOS**: `dist/DigitalHumain.app`
+**Windows:**
+Python'u yeniden kurun ve "tcl/tk" seçeneğini işaretleyin.
 
-**Important**: Copy these files alongside the executable:
-- `config/config.yaml` - Application configuration
-- `.env` - API keys (optional, see below)
-- Create an empty `screenshots/` folder for screen captures
+---
 
-- Create a `.env` file in the project root and add any secrets, e.g.:
-    - `OPENROUTER_API_KEY=sk-...`
-    - `LETTA_API_KEY=...` and `LETTA_AGENT_ID=...`
-- The app auto-loads `.env` on startup; the GUI pre-fills the API key field from the environment.
-- You can still override in the GUI and click **Set Env** to update the in-session environment without editing files.
+## 📖 Temel Kavramlar
 
-See [MEMORY_FEATURES.md](MEMORY_FEATURES.md) for detailed documentation on the memory system.
+### Agent (Ajan) Nedir?
 
-## Configuration
+**Agent**, belirli bir görevi yapmak için programlanmış akıllı bir asistantır. Bir agent:
+1. **Gözlemler**: Ekrana bakar, durum analizi yapar
+2. **Düşünür**: "Ne yapmam gerekiyor?" diye karar verir
+3. **Harekete Geçer**: Kararını uygular (tıklar, yazar, vb.)
+4. **Tekrar eder**: Görev bitene kadar döngü devam eder
 
-Edit `config/config.yaml` to customize:
+**Örnek:** "Excel'i aç ve A1 hücresine 100 yaz" görevi için agent:
+- Gözlem: Masaüstünü görür
+- Düşünme: "Excel'i bulmam lazım"
+- Hareket: Excel'e çift tıklar
+- Gözlem: Excel açıldı
+- Düşünme: "A1 hücresine tıklamam lazım"
+- Hareket: A1'e tıklar
+- ... (devam eder)
 
-- LLM provider and model settings
-- VLM configuration
-- Agent behavior parameters
-- Logging settings
-- Tool configurations
+### VLM (Vision Language Model) Nedir?
 
-## Core Concepts
+**VLM**, hem görebilen hem de dili anlayan yapay zeka modelidir. Normal yapay zeka sadece metin anlayabilirken, VLM ekran görüntülerine bakıp "bu bir düğme", "burada bir form var" gibi analiz yapabilir.
 
-### Agents
+**Moondream** gibi modeller VLM'dir.
 
-Agents follow the ReAct (Reasoning + Acting) pattern:
-1. **Observe**: Analyze current state
-2. **Reason**: Determine next action using LLM
-3. **Act**: Execute the action
-4. **Repeat**: Continue until task complete
+### Tool (Araç) Nedir?
 
-### Multi-Agent Orchestration
+**Tool**, agent'ın kullanabileceği özel bir yetenektir. Örneğin:
+- FileReadTool: Dosya okuma yeteneği
+- FileWriteTool: Dosya yazma yeteneği
+- BrowserTool: Web tarayıcı kullanma yeteneği
 
-The coordinator:
-1. Decomposes complex tasks into subtasks
-2. Selects appropriate agents for each subtask
-3. Manages shared memory for context
-4. Aggregates results
+Agent'lar, görevlerini yapmak için bu araçları kullanır.
 
-### VLM Integration
+### Orchestration (Orkestrasyon) Nedir?
 
-Vision capabilities include:
-- Screen capture and analysis
-- Element detection using OCR (Tesseract) and VLM
-- GUI action execution (click, type, scroll, etc.)
-- Visual reasoning for automation
+**Orchestration**, birden fazla agent'ın koordineli çalışmasıdır. Büyük bir görev, küçük parçalara bölünür ve her parça bir agent'a verilir.
 
-**Supported VLM workflows:**
+**Örnek:** "İnternetten veri topla, Excel'e aktar ve rapor oluştur" görevi:
+- **Agent 1**: Web'den veri toplar
+- **Agent 2**: Verileri Excel'e yazar
+- **Agent 3**: Rapor oluşturur
+- **Coordinator**: Üç agent'ı koordine eder
 
-| Workflow | Local Model | Cloud Alternative |
-|----------|-------------|-------------------|
-| UI Element Detection | moondream | GPT-4V |
-| Text Extraction | Tesseract OCR | Google Vision |
-| Screen Understanding | llama3.2-vision | Claude Vision |
-| Action Planning | llama3.2 | GPT-4 |
+### Memory (Hafıza) Nedir?
 
-### Desktop Application Discovery
+**Memory**, agent'ın geçmiş deneyimlerini hatırlamasıdır:
 
-Automatically discovers and launches applications on your computer:
+- **Episodic Memory**: "Geçen sefer bu ekranda şunu yaptım" gibi hatıralar
+- **Demonstration Memory**: Sizin yaptığınız işlemleri kaydeder
+- **Shared Memory**: Agent'lar arasında paylaşılan bilgi
 
-- **Auto-Scan**: Finds `.exe` and `.lnk` files on Desktop and in Program Files
-- **Natural Language**: Say "Open Bizmed" or "Launch HBYS" - no configuration needed
-- **Fuzzy Matching**: Partial names work (e.g., "biz" matches "bizmed")
-- **Desktop Priority**: Your Desktop shortcuts take precedence
+---
 
-See [docs/APP_DISCOVERY.md](docs/APP_DISCOVERY.md) for full details.
+## 🎓 İleri Seviye Kullanım
 
-**Test what's discovered:**
-```bash
-python test_app_discovery.py
-```
-
-### Tool System
-
-Extensible tool framework for:
-- File operations (read, write, list)
-- System interactions
-- Desktop application launching
-- Custom tool development
-
-## Use Cases
-
-### HBYS (HR/Business Systems)
-- Automated data entry
-- Form filling and submission
-- Report generation
-- Workflow automation
-
-### Accounting
-- Invoice processing
-- Data reconciliation
-- Financial report automation
-- Audit trail management
-
-### Quality Assurance
-- Automated testing workflows
-- Compliance checking
-- Documentation verification
-- Issue tracking automation
-
-## Development
-
-### Adding Custom Agents
+### Kendi Agent'ınızı Yazma
 
 ```python
 from digital_humain.core.agent import BaseAgent, AgentConfig
 
-class MyCustomAgent(BaseAgent):
+class BenimAgentim(BaseAgent):
+    """Özel agent sınıfı"""
+    
     def reason(self, state, observation):
-        # Implement reasoning logic
-        pass
+        """Ne yapacağına karar verir"""
+        # Burada düşünme mantığını yazın
+        return "yapılacak_işlem"
     
     def act(self, state, reasoning):
-        # Implement action logic
-        pass
+        """Kararı uygular"""
+        # Burada hareketi gerçekleştirin
+        return "işlem_sonucu"
+
+# Kullanım
+config = AgentConfig(name="benim_agentim", role=AgentRole.EXECUTOR)
+agent = BenimAgentim(config=config, llm_provider=llm)
 ```
 
-### Adding Custom Tools
+### Kendi Tool'unuzu Yazma
 
 ```python
-from digital_humain.tools.base import BaseTool, ToolMetadata
+from digital_humain.tools.base import BaseTool, ToolMetadata, ToolResult
 
-class MyCustomTool(BaseTool):
+class HesapMakinesiTool(BaseTool):
+    """Basit hesaplama aracı"""
+    
     def get_metadata(self):
         return ToolMetadata(
-            name="my_tool",
-            description="My custom tool",
-            parameters=[...]
+            name="hesap_makinesi",
+            description="İki sayıyı toplar",
+            parameters=[
+                {"name": "sayi1", "type": "number"},
+                {"name": "sayi2", "type": "number"}
+            ]
         )
     
-    def execute(self, **kwargs):
-        # Implement tool logic
-        pass
+    def execute(self, sayi1, sayi2):
+        sonuc = sayi1 + sayi2
+        return ToolResult(
+            success=True,
+            result=sonuc,
+            message=f"{sayi1} + {sayi2} = {sonuc}"
+        )
+
+# Kullanım
+tool = HesapMakinesiTool()
+result = tool.execute(sayi1=5, sayi2=3)
+print(result.result)  # 8
 ```
 
-## Security & Privacy
+---
 
-- All LLM inference runs locally (Ollama/vLLM) by default
-- VLM screen analysis happens on-device with moondream
-- No data sent to external APIs unless explicitly configured
-- Full control over data processing
-- Suitable for sensitive enterprise data
-- Optional cloud fallback for complex reasoning tasks
+## 🔒 Güvenlik ve Gizlilik
 
-## Troubleshooting
+Digital Humain, gizliliğinizi ciddiye alır:
 
-### Common Issues
+- ✅ **Varsayılan olarak yerel çalışma**: Tüm işlemler bilgisayarınızda yapılır
+- ✅ **Veri dışarı çıkmaz**: Ollama kullandığınızda hiçbir veri internete gitmez
+- ✅ **Şifre güvenliği**: API anahtarları `.env` dosyasında saklanır (asla kod içinde değil)
+- ✅ **İsteğe bağlı bulut**: Cloud kullanımı tamamen isteğe bağlıdır
 
-**Ollama connection error:**
-```bash
-# Make sure Ollama is running
-ollama serve
+**Öneriler:**
+1. Hassas verilerle çalışıyorsanız mutlaka Ollama kullanın
+2. `.env` dosyasını asla kimseyle paylaşmayın
+3. API anahtarlarınızı düzenli değiştirin
 
-# Check if it's accessible
-curl http://localhost:11434/api/tags
-```
+---
 
-**Tesseract not found:**
-```bash
-# Linux
-sudo apt install tesseract-ocr
+## 🤝 Katkıda Bulunma
 
-# Verify installation
-tesseract --version
-```
+Digital Humain açık kaynaklı bir projedir ve katkılarınızı bekliyoruz!
 
-**PyAutoGUI display issues (Linux):**
-```bash
-# Install required X11 libraries and screenshot tools
-sudo apt install scrot gnome-screenshot python3-tk python3-dev
-```
+**Nasıl katkıda bulunabilirsiniz:**
 
-**Numpy/OpenCV binary incompatibility:**
-```bash
-# If you see "numpy.dtype size changed" error:
-pip install "numpy>=1.24,<2.0"
-pip install "opencv-python-headless>=4.8,<4.12"
-```
+1. **Hata Bildirimi**: Bulduğunuz hataları GitHub Issues'da bildirin
+2. **Özellik Önerisi**: Yeni fikirlerinizi paylaşın
+3. **Kod Katkısı**: Pull request gönderin
+4. **Dokümantasyon**: Dökümantasyonu geliştirin veya Türkçeleştirin
+5. **Örnek Oluşturma**: Yeni kullanım örnekleri ekleyin
 
-**Out of memory with VLM:**
-```bash
-# Use a smaller model
-ollama pull moondream  # Only 1.7GB
+---
 
-# Or use quantized versions
-ollama pull llama3.2-vision:4bit
-```
+## 📞 Destek
 
-## Requirements
+**Yardıma mı ihtiyacınız var?**
 
-See `requirements.txt` for full dependency list. Key dependencies:
+- 🐛 **Hata bildirimi**: [GitHub Issues](https://github.com/curiousbrutus/digital-humain/issues)
+- 💬 **Sorular**: GitHub Discussions bölümünü kullanın
+- 📖 **Dokümantasyon**: `docs/` klasöründeki detaylı dokümanlara bakın
 
-- `langgraph`: Agent orchestration
-- `langchain`: LLM framework
-- `ollama`: Local LLM integration
-- `pillow`, `opencv-python-headless`: Image processing
-- `numpy>=1.24,<2.0`: Array operations (version constrained for compatibility)
-- `pyautogui`: GUI automation
-- `gnome-screenshot` (Linux): Screenshot capture
-- `pytesseract`: OCR text extraction
-- `pydantic`: Data validation
-- `loguru`: Logging
-- `pynput`: Action recording
+---
 
-## License
+## 📚 Ek Kaynaklar
 
-[Add your license here]
+### Öğrenme Kaynakları
 
-## Contributing
+- **Python Öğrenme**: https://python.org.tr
+- **Yapay Zeka Temelleri**: https://www.youtube.com/watch?v=aircAruvnKk (Türkçe altyazılı)
+- **Git Öğrenme**: https://www.youtube.com/watch?v=3qf6bX3g-a4 (Türkçe)
 
-Contributions are welcome! Please feel free to submit pull requests.
+### İlgili Projeler
 
-## Support
+- **LangChain**: https://python.langchain.com/
+- **Ollama**: https://ollama.ai/
+- **PyAutoGUI**: https://pyautogui.readthedocs.io/
 
-For issues and questions, please use the GitHub issue tracker.
+---
+
+## 📝 Lisans
+
+[OpenSource 2.0]
+
+---
+
+## 🌟 Son Notlar
+
+**Tebrikler!** Digital Humain'i kurup kullanmaya başladınız. 
+
+**İlk adımlar:**
+1. ✅ Kurulumu tamamladınız
+2. ✅ Basit örnekleri çalıştırdınız
+3. ✅ GUI'yi keşfettiniz
+
+**Bundan sonra:**
+- `examples/` klasöründeki örnekleri inceleyin
+- Kendi görevlerinizi oluşturmaya başlayın
+- Sorunla karşılaşırsanız bu rehbere geri dönün
+
+**Unutmayın:** Programlama öğrenmek zaman alır. Hata yapmaktan korkmayın, her hata bir öğrenme fırsatıdır! 🚀
+
+---
+
+
+📅 **Son güncelleme**: Aralık 2025
+
+💝 **Topluluk katkılarıyla geliştirilmiştir**
